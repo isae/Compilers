@@ -1,11 +1,11 @@
 grammar Lang;
 
 program
-    :    WS* (statement';')*statement WS*
+    :    (statement)? (';'statement)*
     ;
     
 statement
-    :    assignment | whileLoop | cond | functionCall | forLoop | repeatLoop | functionDef
+    :    WS* (expr | assignment | whileLoop | cond | functionCall | forLoop | repeatLoop | functionDef) WS*
     ;
 
 assignment
@@ -72,7 +72,6 @@ addition
     :    multiplication 
          ( '+' multiplication 
          | '-' multiplication
-         | '%' multiplication
          )* 
     ;
 
@@ -81,6 +80,7 @@ multiplication
     :    atom
          ( '*' atom 
          | '/' atom
+         | '%' atom
          )* 
     ;
 
