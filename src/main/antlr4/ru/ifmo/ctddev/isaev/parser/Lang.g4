@@ -39,7 +39,7 @@ String   :    '"'.*?'"';
 Val      :    Number;
 
 argList
-    : variable? (',' variable)*
+    : expr? (',' expr)*
     ;
 
 functionCall

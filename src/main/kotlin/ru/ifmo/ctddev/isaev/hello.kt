@@ -6,8 +6,6 @@ import ru.ifmo.ctddev.isaev.parser.LangLexer
 import ru.ifmo.ctddev.isaev.parser.LangParser
 
 
-
-
 /**
  * @author iisaev
  */
@@ -31,10 +29,12 @@ private fun interpret(program: String) {
 
     // Specify our entry point
     val programTree = parser.program()
-    
+
     val astBuilder = ASTBuilder()
-    
+
     val rootNode = astBuilder.visitProgram(programTree)
+
+    rootNode.interpret()
 
     val f = false
     // Walk it and attach our listener
