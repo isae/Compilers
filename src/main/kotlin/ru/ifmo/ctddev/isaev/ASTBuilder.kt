@@ -74,7 +74,27 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     }
 
     override fun visitExpr(ctx: LangParser.ExprContext?): Node {
-        return visitAddition(ctx?.getChild(0) as LangParser.AdditionContext?)
+        if (ctx!!.childCount == 1) {
+            return visitAddition(ctx.getChild(0) as LangParser.AdditionContext?)
+        } else {
+            var pos = 1
+            var left = visitAddition(ctx.getChild(0) as LangParser.AdditionContext?)
+            while (pos < ctx.childCount) {
+                val term = ctx.getChild(pos) as TerminalNode
+                val right = visitAddition(ctx.getChild(pos + 1) as LangParser.AdditionContext?)
+                left = when (term.text) {
+                    "==" -> Node.Eq(left, right)
+                    "!=" -> Node.Neq(left, right)
+                    "<" -> Node.Lesser(left, right)
+                    "<=" -> Node.Leq(left, right)
+                    ">" -> Node.Greater(left, right)
+                    ">=" -> Node.Geq(left, right)
+                    else -> throw IllegalStateException("Unknown term in expression: ${term.text}")
+                }
+                pos += 2
+            }
+            return left
+        }
     }
 
     override fun visitAddition(ctx: LangParser.AdditionContext?): Node {

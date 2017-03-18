@@ -21,33 +21,79 @@ sealed class Node {
         }
     }
 
-    class Add(val left: Node, val right: Node) : Node() {
+    abstract class Binary(val left: Node, val right: Node) : Node() {
+        abstract fun eval(left: Int, right: Int): Int
         override fun interpret(ctx: MutableMap<String, Any>): Int {
-            return left.interpret(ctx) + right.interpret(ctx)
+            return eval(
+                    left.interpret(ctx),
+                    right.interpret(ctx)
+            )
         }
     }
 
-    class Sub(val left: Node, val right: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
-            return left.interpret(ctx) - right.interpret(ctx)
+    class Add(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return left + right
         }
     }
 
-    class Mul(val left: Node, val right: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
-            return left.interpret(ctx) * right.interpret(ctx)
+    class Sub(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return left - right
         }
     }
 
-    class Div(val left: Node, val right: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
-            return left.interpret(ctx) / right.interpret(ctx)
+    class Mul(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return left * right
         }
     }
 
-    class Mod(val left: Node, val right: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
-            return left.interpret(ctx) % right.interpret(ctx)
+    class Div(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return left / right
+        }
+    }
+
+    class Mod(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return left % right
+        }
+    }
+
+    class Eq(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return if (left == right) 1 else 0
+        }
+    }
+
+    class Neq(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return if (left != right) 1 else 0
+        }
+    }
+
+    class Lesser(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return if (left < right) 1 else 0
+        }
+    }
+
+    class Greater(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return if (left > right) 1 else 0
+        }
+    }
+
+    class Leq(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return if (left <= right) 1 else 0
+        }
+    }
+
+    class Geq(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return if (left >= right) 1 else 0
         }
     }
 
