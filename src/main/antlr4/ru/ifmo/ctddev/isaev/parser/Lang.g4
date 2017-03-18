@@ -9,7 +9,7 @@ program
     ;
     
 statement
-    :    (whileLoop | cond | forLoop | repeatLoop | functionCall | assignment |  expr)
+    :    (SKIP_RULE | whileLoop | cond | forLoop | repeatLoop | functionCall | assignment |  expr)
     ;
 
 assignment
@@ -93,6 +93,13 @@ atom
     
 variable: 
     Var;
+    
+SKIP_RULE : 'skip'    ;
+
+Var      :    ('A'..'Z'|'a'..'z'|'_')+;
+Number   :    ('+'|'-')?('0'..'9')+;
+String   :    '"'.*?'"';
+Val      :    Number;
 
 WHILE : 'while' { ignore = false; } WS { ignore = true; };    
 REPEAT : 'repeat' { ignore = false; } WS { ignore = true; };    
@@ -111,10 +118,6 @@ BEGIN : { ignore = false; } WS+ 'begin'  WS+ { ignore = true; };
 FI : { ignore = false; } WS+ 'fi' { ignore = true; };    
 END : { ignore = false; } WS+ 'end' { ignore = true; };    
 
-Var      :    ('A'..'Z'|'a'..'z')+;
-Number   :    ('+'|'-')?('0'..'9')+;
-String   :    '"'.*?'"';
-Val      :    Number;
 
 WS  
     :   (' ' | '\t' | '\r'| '\n')  { if(ignore) skip(); };

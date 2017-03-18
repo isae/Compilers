@@ -56,6 +56,10 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
             is LangParser.ForLoopContext -> visitForLoop(child)
             is LangParser.RepeatLoopContext -> visitRepeatLoop(child)
             is LangParser.ExprContext -> visitExpr(child)
+            is TerminalNode -> {
+                if (child.text == "skip") Node.Skip() else
+                    throw IllegalArgumentException("Invalid terminal statement: ${child.text}")
+            }
             else -> throw IllegalArgumentException("Unknown node: ${child::class}")
         }
     }
@@ -137,6 +141,10 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
                     "<=" -> Node.Leq(left, right)
                     ">" -> Node.Greater(left, right)
                     ">=" -> Node.Geq(left, right)
+                    "&" -> Node.And(left, right)
+                    "|" -> Node.Or(left, right)
+                    "&&" -> Node.Dand(left, right)
+                    "||" -> Node.Dor(left, right)
                     else -> throw IllegalStateException("Unknown term in expression: ${term.text}")
                 }
                 pos += 2

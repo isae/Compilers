@@ -15,6 +15,12 @@ sealed class Node {
         }
     }
 
+    class Skip : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            return 0
+        }
+    }
+
     class Variable(val name: String) : Node() {
         override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             return ctx[name] as Int
@@ -46,6 +52,18 @@ sealed class Node {
     class Mul(l: Node, r: Node) : Binary(l, r) {
         override fun eval(left: Int, right: Int): Int {
             return left * right
+        }
+    }
+
+    class And(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return left.and(right)
+        }
+    }
+
+    class Or(l: Node, r: Node) : Binary(l, r) {
+        override fun eval(left: Int, right: Int): Int {
+            return left.or(right)
         }
     }
 
@@ -94,6 +112,28 @@ sealed class Node {
     class Geq(l: Node, r: Node) : Binary(l, r) {
         override fun eval(left: Int, right: Int): Int {
             return if (left >= right) 1 else 0
+        }
+    }
+
+    class Dand(val left: Node, val right: Node) : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            val left = left.interpret(ctx, funCtx)
+            if (left != 0) {
+                return left.and(right.interpret(ctx, funCtx))
+            } else {
+                return 0
+            }
+        }
+    }
+
+    class Dor(val left: Node, val right: Node) : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            val left = left.interpret(ctx, funCtx)
+            if (left != 0) {
+                return left
+            } else {
+                return left.or(right.interpret(ctx, funCtx))
+            }
         }
     }
 
