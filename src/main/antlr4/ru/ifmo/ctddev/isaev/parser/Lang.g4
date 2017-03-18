@@ -5,11 +5,11 @@ grammar Lang;
 }
 
 program
-    :    (statement)? (';'statement)*
+    :    functionDef* (statement)? (';'statement)*
     ;
     
 statement
-    :    (whileLoop | cond | forLoop | repeatLoop | functionDef | functionCall | assignment |  expr)
+    :    (whileLoop | cond | forLoop | repeatLoop | functionCall | assignment |  expr)
     ;
 
 assignment
@@ -21,13 +21,10 @@ whileLoop
     ;
 
 forLoop
-    : FOR assignment ',' expr ','assignment WS
-        'do'
-        WS program WS 'od' 
-    ;    
+    : FOR assignment ',' expr ','assignment DO program OD;    
  
 repeatLoop
-    : 'repeat' WS program WS 'until' WS expr 
+    : REPEAT program UNTIL expr 
     ;    
    
 cond
@@ -37,14 +34,17 @@ cond
 argList
     : expr? ( ',' expr)*
     ;
+    
+functionBody
+    :    (RETURN? statement)? (';' RETURN? statement)*
+    ;      
 
 functionCall
     : variable '(' argList ')'
     ;
 
 functionDef
-    : 'fun' WS variable '(' argList ')' WS
-      'begin' program 'end'
+    : FUN variable '(' argList ')' BEGIN functionBody END
     ;
   
 /* Logical operations have the lowest precedence. */
@@ -95,13 +95,21 @@ variable:
     Var;
 
 WHILE : 'while' { ignore = false; } WS { ignore = true; };    
+REPEAT : 'repeat' { ignore = false; } WS { ignore = true; };    
 FOR : 'for' { ignore = false; } WS { ignore = true; };    
-IF : 'if' { ignore = false; } WS { ignore = true; };    
+IF : 'if' { ignore = false; } WS { ignore = true; };  
+FUN : 'fun' { ignore = false; } WS { ignore = true; };  
+RETURN : 'return' { ignore = false; } WS { ignore = true; };  
+  
 DO : { ignore = false; } WS+ 'do'  WS+ { ignore = true; };    
 OD : { ignore = false; } WS+ 'od' { ignore = true; };   
 THEN : { ignore = false; } WS+ 'then'  WS+ { ignore = true; };   
 ELSE : { ignore = false; } WS+ 'else'  WS+ { ignore = true; };   
+UNTIL : { ignore = false; } WS+ 'until'  WS+ { ignore = true; };  
+BEGIN : { ignore = false; } WS+ 'begin'  WS+ { ignore = true; };  
+ 
 FI : { ignore = false; } WS+ 'fi' { ignore = true; };    
+END : { ignore = false; } WS+ 'end' { ignore = true; };    
 
 Var      :    ('A'..'Z'|'a'..'z')+;
 Number   :    ('+'|'-')?('0'..'9')+;

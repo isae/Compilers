@@ -4,29 +4,29 @@ package ru.ifmo.ctddev.isaev
  * @author iisaev
  */
 sealed class Node {
-    abstract fun interpret(ctx: MutableMap<String, Any>): Int
+    abstract fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int
     fun interpret(): Int {
-        return interpret(HashMap())
+        return interpret(HashMap(), HashMap())
     }
 
     class Const(val number: Int) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             return number
         }
     }
 
     class Variable(val name: String) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             return ctx[name] as Int
         }
     }
 
     abstract class Binary(val left: Node, val right: Node) : Node() {
         abstract fun eval(left: Int, right: Int): Int
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             return eval(
-                    left.interpret(ctx),
-                    right.interpret(ctx)
+                    left.interpret(ctx, funCtx),
+                    right.interpret(ctx, funCtx)
             )
         }
     }
@@ -98,43 +98,74 @@ sealed class Node {
     }
 
     class FunctionCall(val functionName: String, val args: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             //TODO: think about variables scoping
+            val callArgs = args.map {
+                when (it) {
+                    is Const -> it.number
+                    else -> it.interpret(ctx, funCtx)
+                }
+            }
             return when (functionName) {
                 "read" -> readLine()!!.toInt()
                 "write" -> {
-                    args.map {
-                        when (it) {
-                            is Const -> it.number
-                            else -> it.interpret(ctx)
-                        }
-                    }.forEach(::println)
+                    callArgs.forEach(::println)
                     return 0
                 }
                 else -> {
-                    TODO("Custom function calls are not supported yet")
+                    val function = funCtx[functionName] ?: throw IllegalStateException("Invalid function name: $functionName")
+                    val localCtx = HashMap<String, Int>()
+                    if (function.argNames.size != callArgs.size) {
+                        throw IllegalStateException("Argument number mismatch for function call $functionName")
+                    }
+                    function.argNames.forEachIndexed { i, s -> localCtx[s] = callArgs[i] }
+                    return function.interpret(localCtx, funCtx)
                 }
             }
         }
     }
 
-    class Program(val statements: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
-            return statements.map { it.interpret(ctx) }.lastOrNull() ?: 0;
+    class FunctionDef(val functionName: String, val argNames: List<String>, val body: Program) : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            return body.interpret(ctx, funCtx)
+        }
+
+    }
+
+    class Program(val functions: List<FunctionDef>, val statements: List<Node>) : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            functions.forEach {
+                if (funCtx.containsKey(it.functionName)) {
+                    throw IllegalStateException("Duplicate function: ${it.functionName}")
+                } else {
+                    funCtx.put(it.functionName, it)
+                }
+            }
+            return statements.map { it.interpret(ctx, funCtx) }.lastOrNull() ?: 0
         }
     }
 
     class Conditional(val expr: Node, val ifTrue: Node, val ifFalse: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
-            val isTrue = expr.interpret(ctx) > 0
-            return if (isTrue) ifTrue.interpret(ctx) else ifFalse.interpret(ctx);
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            val isTrue = expr.interpret(ctx, funCtx) > 0
+            return if (isTrue) ifTrue.interpret(ctx, funCtx) else ifFalse.interpret(ctx, funCtx);
         }
     }
 
     class Assignment(val variable: Variable, val toAssign: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Any>): Int {
-            ctx[variable.name] = toAssign.interpret(ctx)
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            ctx[variable.name] = toAssign.interpret(ctx, funCtx)
             return 0
+        }
+    }
+
+    class WhileLoop(val expr: Node, val loop: Node) : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            var last = 0
+            while (expr.interpret(ctx, funCtx) > 0) {
+                last = loop.interpret(ctx, funCtx)
+            }
+            return last
         }
     }
 }

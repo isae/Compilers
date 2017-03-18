@@ -9,9 +9,37 @@ import ru.ifmo.ctddev.isaev.parser.LangVisitor
  * @author iisaev
  */
 class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
+    override fun visitFunctionBody(ctx: LangParser.FunctionBodyContext?): Node.Program {
+        assert(ctx!!.childCount != 0) //empty function is not valid!
+        val statements = ArrayList<Node>()
+        var pos = 0
+        var child = ctx.getChild(pos)
+        while (!(child is TerminalNode && child.text.startsWith("return"))) {
+            // searching for return
+            if (child !is TerminalNode) {
+                val stmt = ctx.getChild(pos) as LangParser.StatementContext
+                statements.add(visitStatement(stmt))
+            }
+            ++pos
+            child = ctx.getChild(pos)
+        }
+        statements.add(visitStatement(ctx.getChild(pos + 1) as LangParser.StatementContext))
+        return Node.Program(emptyList(), statements)
+    }
+
     override fun visitProgram(ctx: LangParser.ProgramContext?): Node.Program {
+        assert(ctx!!.childCount != 0) //empty program is not valid!
+        val functionDefs = ArrayList<Node.FunctionDef>()
+        var pos = 0
+        while (ctx.getChild(pos) is LangParser.FunctionDefContext) {
+            val child = ctx.getChild(pos) as LangParser.FunctionDefContext
+            functionDefs.add(visitFunctionDef(child))
+            ++pos
+        }
         return Node.Program(
-                ctx?.children!!
+                functionDefs,
+                ctx.children!!
+                        .drop(pos)
                         .filter { it !is TerminalNode }
                         .map { visitStatement(it as LangParser.StatementContext?) }
         )
@@ -27,6 +55,7 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
             is LangParser.WhileLoopContext -> visitWhileLoop(child)
             is LangParser.ForLoopContext -> visitForLoop(child)
             is LangParser.RepeatLoopContext -> visitRepeatLoop(child)
+            is LangParser.ExprContext -> visitExpr(child)
             else -> throw IllegalArgumentException("Unknown node: ${child::class}")
         }
     }
@@ -40,7 +69,10 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     }
 
     override fun visitWhileLoop(ctx: LangParser.WhileLoopContext?): Node {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        assert(ctx!!.childCount == 5)
+        val expr = visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
+        val loop = visitProgram(ctx.getChild(3) as LangParser.ProgramContext)
+        return Node.WhileLoop(expr, loop)
     }
 
     override fun visitForLoop(ctx: LangParser.ForLoopContext?): Node {
@@ -56,7 +88,7 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         val expr = visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
         val ifTrue = visitProgram(ctx.getChild(3) as LangParser.ProgramContext)
         val ifFalse = visitProgram(ctx.getChild(5) as LangParser.ProgramContext)
-        return Node.Conditional(expr, ifTrue, ifFalse);
+        return Node.Conditional(expr, ifTrue, ifFalse)
     }
 
     override fun visitArgList(ctx: LangParser.ArgListContext?): Node {
@@ -77,8 +109,16 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         )
     }
 
-    override fun visitFunctionDef(ctx: LangParser.FunctionDefContext?): Node {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitFunctionDef(ctx: LangParser.FunctionDefContext?): Node.FunctionDef {
+        assert(ctx!!.childCount == 8)
+        val functionName = visitVariable(ctx.getChild(1) as LangParser.VariableContext)
+        val args = visitArgs(ctx.getChild(3) as LangParser.ArgListContext)
+        val body = visitFunctionBody(ctx.getChild(6) as LangParser.FunctionBodyContext)
+        return Node.FunctionDef(
+                functionName.name,
+                args.map { it as Node.Variable }.map { it.name },
+                body
+        )
     }
 
     override fun visitExpr(ctx: LangParser.ExprContext?): Node {
