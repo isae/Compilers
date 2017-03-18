@@ -78,16 +78,43 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     }
 
     override fun visitAddition(ctx: LangParser.AdditionContext?): Node {
-        return visitMultiplication(ctx?.getChild(0) as LangParser.MultiplicationContext?)
+        if (ctx!!.childCount == 1) {
+            return visitMultiplication(ctx.getChild(0) as LangParser.MultiplicationContext?)
+        } else {
+            var pos = 1
+            var left = visitMultiplication(ctx.getChild(0) as LangParser.MultiplicationContext?)
+            while (pos < ctx.childCount) {
+                val term = ctx.getChild(pos) as TerminalNode
+                val right = visitMultiplication(ctx.getChild(pos + 1) as LangParser.MultiplicationContext?)
+                left = when (term.text) {
+                    "+" -> Node.Add(left, right)
+                    "-" -> Node.Sub(left, right)
+                    else -> throw IllegalStateException("Unknown term in addition: ${term.text}")
+                }
+                pos += 2
+            }
+            return left
+        }
     }
 
     override fun visitMultiplication(ctx: LangParser.MultiplicationContext?): Node {
         if (ctx!!.childCount == 1) {
             return visitAtom(ctx.getChild(0) as LangParser.AtomContext?)
         } else {
-            return Node.Multiplication(ctx.children!!
-                    .filter { it !is TerminalNode }
-                    .map { visitAtom(it as LangParser.AtomContext?) })
+            var pos = 1
+            var left = visitAtom(ctx.getChild(0) as LangParser.AtomContext?)
+            while (pos < ctx.childCount) {
+                val term = ctx.getChild(pos) as TerminalNode
+                val right = visitAtom(ctx.getChild(pos + 1) as LangParser.AtomContext?)
+                left = when (term.text) {
+                    "*" -> Node.Mul(left, right)
+                    "/" -> Node.Div(left, right)
+                    "%" -> Node.Mod(left, right)
+                    else -> throw IllegalStateException("Unknown term in multiplication: ${term.text}")
+                }
+                pos += 2
+            }
+            return left
         }
     }
 
@@ -99,7 +126,7 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
             is TerminalNode -> {
                 val nodeText = child.text
                 return when (nodeText) {
-                    "(" -> visitExpr(child.getChild(1) as LangParser.ExprContext?)
+                    "(" -> visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
                     else -> Node.Const(nodeText.toInt())
                 }
             }

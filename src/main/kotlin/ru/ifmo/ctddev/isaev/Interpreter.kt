@@ -21,15 +21,33 @@ sealed class Node {
         }
     }
 
-    class Addition(val addends: List<Node>) : Node() {
+    class Add(val left: Node, val right: Node) : Node() {
         override fun interpret(ctx: MutableMap<String, Any>): Int {
-            return addends.map { it.interpret(ctx) }.reduce(Int::plus)
+            return left.interpret(ctx) + right.interpret(ctx)
         }
     }
 
-    class Multiplication(val multipliers: List<Node>) : Node() {
+    class Sub(val left: Node, val right: Node) : Node() {
         override fun interpret(ctx: MutableMap<String, Any>): Int {
-            return multipliers.map { it.interpret(ctx) }.reduce(Int::times)
+            return left.interpret(ctx) - right.interpret(ctx)
+        }
+    }
+
+    class Mul(val left: Node, val right: Node) : Node() {
+        override fun interpret(ctx: MutableMap<String, Any>): Int {
+            return left.interpret(ctx) * right.interpret(ctx)
+        }
+    }
+
+    class Div(val left: Node, val right: Node) : Node() {
+        override fun interpret(ctx: MutableMap<String, Any>): Int {
+            return left.interpret(ctx) / right.interpret(ctx)
+        }
+    }
+
+    class Mod(val left: Node, val right: Node) : Node() {
+        override fun interpret(ctx: MutableMap<String, Any>): Int {
+            return left.interpret(ctx) % right.interpret(ctx)
         }
     }
 
