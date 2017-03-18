@@ -1,97 +1,114 @@
 grammar Lang;
 
+@lexer::members {
+    boolean ignore=true;
+}
+
 program
     :    (statement)? (';'statement)*
     ;
     
 statement
-    :    WS* (assignment | whileLoop | cond | functionCall | forLoop | repeatLoop | functionDef | expr) WS*
+    :    (whileLoop | cond | forLoop | repeatLoop | functionDef | functionCall | assignment |  expr)
     ;
 
 assignment
-    : variable ':=' WS* expr
+    : variable ':=' expr
     ;
     
 whileLoop
-    : 'while' WS+ expr WS+ 'do' WS+ program WS+ 'od' 
+    : WHILE expr DO program OD
     ;
 
 forLoop
-    : 'for' 
-        WS+ assignment ',' 
-        expr ','
-        assignment WS+ 
+    : FOR assignment ',' expr ','assignment WS
         'do'
-        WS+ program WS+ 'od' 
+        WS program WS 'od' 
     ;    
  
 repeatLoop
-    : 'repeat' WS+ program WS+ 'until' WS+ expr 
+    : 'repeat' WS program WS 'until' WS expr 
     ;    
    
 cond
-    : 'if' WS+ expr WS+ 'then' WS+ program WS+ 'else' WS+ program WS+ 'fi'
+    : IF expr THEN program ELSE program FI
     ;
 
-Var      :    ('A'..'Z'|'a'..'z')+;
-Number   :    ('+'|'-')?('0'..'9')+;
-String   :    '"'.*?'"';
-Val      :    Number;
-
 argList
-    : expr? (',' expr)*
+    : expr? ( ',' expr)*
     ;
 
 functionCall
-    : variable '(' argList ')' WS*
+    : variable '(' argList ')'
     ;
 
 functionDef
-    : 'fun' WS+ variable '(' argList ')' WS+
+    : 'fun' WS variable '(' argList ')' WS
       'begin' program 'end'
     ;
   
 /* Logical operations have the lowest precedence. */
 expr
     :    addition 
-         ( '<' addition 
-         | '<=' addition
-         | '>' addition
-         | '>=' addition
-         | '==' addition
-         | '!=' addition
-         | '|' addition
-         | '||' addition
-         | '&' addition
-         | '&&' addition
+         (
+             ( '<' addition 
+             | '<=' addition
+             | '>' addition
+             | '>=' addition
+             | '==' addition
+             | '!=' addition
+             | '|' addition
+             | '||' addition
+             | '&' addition
+             | '&&' addition
+             )
          )* 
     ;
         
 addition
     :    multiplication 
-         ( '+' multiplication 
-         | '-' multiplication
+         (
+             ( '+' multiplication 
+             | '-' multiplication
+             )
          )* 
     ;
 
 multiplication
     :    atom
-         ( '*' atom 
-         | '/' atom
-         | '%' atom
+         (
+             ( '*' atom 
+             | '/' atom
+             | '%' atom
+             )
          )* 
     ;
 
 atom
-    :    Number
-    |    WS* '(' expr ')' WS*
-    |    variable
+    :    variable
     |    functionCall
+    |    Number
+    |    '(' expr ')'
     ;
     
 variable: 
-    WS* Var WS*;
+    Var;
+
+WHILE : 'while' { ignore = false; } WS { ignore = true; };    
+FOR : 'for' { ignore = false; } WS { ignore = true; };    
+IF : 'if' { ignore = false; } WS { ignore = true; };    
+DO : { ignore = false; } WS+ 'do'  WS+ { ignore = true; };    
+OD : { ignore = false; } WS+ 'od' { ignore = true; };   
+THEN : { ignore = false; } WS+ 'then'  WS+ { ignore = true; };   
+ELSE : { ignore = false; } WS+ 'else'  WS+ { ignore = true; };   
+FI : { ignore = false; } WS+ 'fi' { ignore = true; };    
+
+Var      :    ('A'..'Z'|'a'..'z')+;
+Number   :    ('+'|'-')?('0'..'9')+;
+String   :    '"'.*?'"';
+Val      :    Number;
 
 WS  
-    :   (' ' | '\t' | '\r'| '\n') -> skip
-    ;
+    :   (' ' | '\t' | '\r'| '\n')  { if(ignore) skip(); };
+    
+    

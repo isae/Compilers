@@ -10,10 +10,21 @@ import java.io.File
 /**
  * @author iisaev
  */
+/*fun main(args: Array<String>) {
+        val programText = """x:=1;
+if x  then     write(1)   
+else  write(2)
+
+
+fi"""
+        println(programText)
+        interpret(programText)
+}*/
+
 fun main(args: Array<String>) {
     while (true) {
         val testName = readLine()
-        val programText = File("./compiler-tests/core/${testName}.expr").readText()
+        val programText = File("./compiler-tests/core/test0${testName}.expr").readText()
         println(programText)
         interpret(programText)
     }

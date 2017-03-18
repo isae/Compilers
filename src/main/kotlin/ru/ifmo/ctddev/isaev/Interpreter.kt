@@ -120,8 +120,14 @@ sealed class Node {
 
     class Program(val statements: List<Node>) : Node() {
         override fun interpret(ctx: MutableMap<String, Any>): Int {
-            statements.forEach { it.interpret(ctx) }
-            return 0
+            return statements.map { it.interpret(ctx) }.lastOrNull() ?: 0;
+        }
+    }
+
+    class Conditional(val expr: Node, val ifTrue: Node, val ifFalse: Node) : Node() {
+        override fun interpret(ctx: MutableMap<String, Any>): Int {
+            val isTrue = expr.interpret(ctx) > 0
+            return if (isTrue) ifTrue.interpret(ctx) else ifFalse.interpret(ctx);
         }
     }
 

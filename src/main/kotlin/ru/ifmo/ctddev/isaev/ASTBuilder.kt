@@ -23,6 +23,10 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         return when (child) {
             is LangParser.AssignmentContext -> visitAssignment(child)
             is LangParser.FunctionCallContext -> visitFunctionCall(child)
+            is LangParser.CondContext -> visitCond(child)
+            is LangParser.WhileLoopContext -> visitWhileLoop(child)
+            is LangParser.ForLoopContext -> visitForLoop(child)
+            is LangParser.RepeatLoopContext -> visitRepeatLoop(child)
             else -> throw IllegalArgumentException("Unknown node: ${child::class}")
         }
     }
@@ -47,8 +51,12 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun visitCond(ctx: LangParser.CondContext?): Node {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitCond(ctx: LangParser.CondContext?): Node.Conditional {
+        assert(ctx!!.childCount == 7)
+        val expr = visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
+        val ifTrue = visitProgram(ctx.getChild(3) as LangParser.ProgramContext)
+        val ifFalse = visitProgram(ctx.getChild(5) as LangParser.ProgramContext)
+        return Node.Conditional(expr, ifTrue, ifFalse);
     }
 
     override fun visitArgList(ctx: LangParser.ArgListContext?): Node {
