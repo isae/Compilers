@@ -5,11 +5,11 @@ program
     ;
     
 statement
-    :    WS* (expr | assignment | whileLoop | cond | functionCall | forLoop | repeatLoop | functionDef) WS*
+    :    WS* (assignment | whileLoop | cond | functionCall | forLoop | repeatLoop | functionDef | expr) WS*
     ;
 
 assignment
-    : Var ':=' expr
+    : variable ':=' WS* expr
     ;
     
 whileLoop
@@ -30,24 +30,24 @@ repeatLoop
     ;    
    
 cond
-    : 'if' expr 'then' program 'else' program 'fi'
+    : 'if' WS+ expr WS+ 'then' WS+ program WS+ 'else' WS+ program WS+ 'fi'
     ;
 
 Var      :    ('A'..'Z'|'a'..'z')+;
-Number   :    ('0'..'9')+;
+Number   :    ('+'|'-')?('0'..'9')+;
 String   :    '"'.*?'"';
 Val      :    Number;
 
 argList
-    : Var? (',' Var)*
+    : variable? (',' variable)*
     ;
 
 functionCall
-    : Var '(' argList ')'
+    : variable '(' argList ')' WS*
     ;
 
 functionDef
-    : 'fun' WS+ Var '(' argList ')' WS+
+    : 'fun' WS+ variable '(' argList ')' WS+
       'begin' program 'end'
     ;
   
@@ -67,7 +67,6 @@ expr
          )* 
     ;
         
-/* Addition and subtraction have higher precedence. */
 addition
     :    multiplication 
          ( '+' multiplication 
@@ -75,7 +74,6 @@ addition
          )* 
     ;
 
-/* Multiplication and division have a higher precedence. */
 multiplication
     :    atom
          ( '*' atom 
@@ -84,16 +82,16 @@ multiplication
          )* 
     ;
 
-/* An expression atom is the smallest part of an expression: a number. Or 
-   when we encounter parenthesis, we're making a recursive call back to the
-   rule 'additionExp'. As you can see, an 'atomExp' has the highest precedence. */
 atom
-    :    Val
-    |    '(' expr ')'
+    :    Number
+    |    WS* '(' expr ')' WS*
+    |    variable
     |    functionCall
     ;
+    
+variable: 
+    WS* Var WS*;
 
-/* We're going to ignore all white space characters */
 WS  
-    :   (' ' | '\t' | '\r'| '\n')
+    :   (' ' | '\t' | '\r'| '\n') -> skip
     ;
