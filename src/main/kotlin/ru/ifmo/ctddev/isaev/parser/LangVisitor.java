@@ -89,18 +89,6 @@ public interface LangVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExpr(LangParser.ExprContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link LangParser#addition}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitAddition(LangParser.AdditionContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link LangParser#multiplication}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMultiplication(LangParser.MultiplicationContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link LangParser#atom}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

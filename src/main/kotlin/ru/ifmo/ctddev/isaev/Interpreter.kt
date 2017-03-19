@@ -150,7 +150,6 @@ sealed class Node {
                     else -> it.interpret(ctx, funCtx)
                 }
             }
-            println("Call $functionName with $callArgs")
             return when (functionName) {
                 "read" -> readLine()!!.toInt()
                 "write" -> {

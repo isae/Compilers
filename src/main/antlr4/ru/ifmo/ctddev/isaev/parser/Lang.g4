@@ -49,22 +49,18 @@ functionDef
   
 /* Logical operations have the lowest precedence. */
 expr
-    :    addition 
-             ( '<' addition  | '<=' addition | '>' addition | '>=' addition     
-             | '==' addition | '!=' addition 
-             | '&' addition  | '|' addition 
-             | '&&' addition | '||' addition 
-             )*
-    ;
+    :    atom
+         |   ('+'|'-') expr
+         |   expr ( '*'| '/'| '%') expr
+         |   expr ( '+'|'-') expr
+         |   expr ( '<'|'<='|'>'|'>=') expr
+         |   expr ( '=='|'!=') expr
+         |   expr '&' expr
+         |   expr '|' expr
+         |   expr '&&' expr
+         |   expr '||' expr
+         ;
         
-addition
-    :    ('+'|'-')? multiplication //unary plus/minus
-         ( '+' multiplication | '-' multiplication )*
-    ;
-
-multiplication
-    :    atom ( '*' atom  | '/' atom | '%' atom )* ;
-
 atom
     :    variable | functionCall | Number | '(' expr ')';
     

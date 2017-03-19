@@ -156,77 +156,34 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
 
     override fun visitExpr(ctx: LangParser.ExprContext?): Node {
         if (ctx!!.childCount == 1) {
-            return visitAddition(ctx.getChild(0) as LangParser.AdditionContext?)
-        } else {
-            var pos = 1
-            var left = visitAddition(ctx.getChild(0) as LangParser.AdditionContext?)
-            while (pos < ctx.childCount) {
-                val term = ctx.getChild(pos) as TerminalNode
-                val right = visitAddition(ctx.getChild(pos + 1) as LangParser.AdditionContext?)
-                left = when (term.text) {
-                    "==" -> Node.Eq(left, right)
-                    "!=" -> Node.Neq(left, right)
-                    "<" -> Node.Lesser(left, right)
-                    "<=" -> Node.Leq(left, right)
-                    ">" -> Node.Greater(left, right)
-                    ">=" -> Node.Geq(left, right)
-                    "&" -> Node.And(left, right)
-                    "|" -> Node.Or(left, right)
-                    "&&" -> Node.Dand(left, right)
-                    "||" -> Node.Dor(left, right)
-                    else -> throw IllegalStateException("Unknown term in expression: ${term.text}")
-                }
-                pos += 2
-            }
-            return left
-        }
-    }
-
-    override fun visitAddition(ctx: LangParser.AdditionContext?): Node {
-        val firstSign = ctx!!.getChild(0) is TerminalNode
-        val isMinus = firstSign && ctx.getChild(0).text == "-"
-        val oneChild = if (firstSign) 1 else 0
-        if (ctx.childCount == 1 + oneChild) {
-            val mul = visitMultiplication(ctx.getChild(0) as LangParser.MultiplicationContext?)
-            return if (isMinus) Node.UnaryMinus(mul) else mul
-        } else {
-            var pos = 1 + oneChild
-            var left = visitMultiplication(ctx.getChild(oneChild) as LangParser.MultiplicationContext?)
-            if (isMinus) {
-                left = Node.UnaryMinus(left)
-            }
-            while (pos < ctx.childCount) {
-                val term = ctx.getChild(pos) as TerminalNode
-                val right = visitMultiplication(ctx.getChild(pos + 1) as LangParser.MultiplicationContext?)
-                left = when (term.text) {
-                    "+" -> Node.Add(left, right)
-                    "-" -> Node.Sub(left, right)
-                    else -> throw IllegalStateException("Unknown term in addition: ${term.text}")
-                }
-                pos += 2
-            }
-            return left
-        }
-    }
-
-    override fun visitMultiplication(ctx: LangParser.MultiplicationContext?): Node {
-        if (ctx!!.childCount == 1) {
             return visitAtom(ctx.getChild(0) as LangParser.AtomContext?)
         } else {
-            var pos = 1
-            var left = visitAtom(ctx.getChild(0) as LangParser.AtomContext?)
-            while (pos < ctx.childCount) {
-                val term = ctx.getChild(pos) as TerminalNode
-                val right = visitAtom(ctx.getChild(pos + 1) as LangParser.AtomContext?)
-                left = when (term.text) {
-                    "*" -> Node.Mul(left, right)
-                    "/" -> Node.Div(left, right)
-                    "%" -> Node.Mod(left, right)
-                    else -> throw IllegalStateException("Unknown term in multiplication: ${term.text}")
-                }
-                pos += 2
+            val firstSign = ctx.getChild(0) is TerminalNode
+            val isMinus = firstSign && ctx.getChild(0).text == "-"
+            if (isMinus) {
+                return Node.UnaryMinus(visitExpr(ctx.getChild(1) as LangParser.ExprContext))
             }
-            return left
+            val left = visitExpr(ctx.getChild(0) as LangParser.ExprContext)
+            val right = visitExpr(ctx.getChild(2) as LangParser.ExprContext)
+            val term = ctx.getChild(1) as TerminalNode
+            return when (term.text) {
+                "+" -> Node.Add(left, right)
+                "-" -> Node.Sub(left, right)
+                "*" -> Node.Mul(left, right)
+                "/" -> Node.Div(left, right)
+                "%" -> Node.Mod(left, right)
+                "==" -> Node.Eq(left, right)
+                "!=" -> Node.Neq(left, right)
+                "<" -> Node.Lesser(left, right)
+                ">" -> Node.Greater(left, right)
+                "<=" -> Node.Leq(left, right)
+                ">=" -> Node.Geq(left, right)
+                "&" -> Node.And(left, right)
+                "|" -> Node.Or(left, right)
+                "&&" -> Node.Dand(left, right)
+                "||" -> Node.Dor(left, right)
+                else -> throw IllegalStateException("Unknown term in expression: ${term.text}")
+            }
         }
     }
 
