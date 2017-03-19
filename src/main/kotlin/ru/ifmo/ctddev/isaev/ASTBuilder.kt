@@ -20,7 +20,7 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         while ((pos * 4 + 3) < ctx.childCount) {
             val expr = visitExpr(ctx.getChild(pos * 4 + 1) as LangParser.ExprContext)
             val block = visitStatements((ctx.getChild(pos * 4 + 3) as LangParser.CodeBlockContext))
-            result.add(Elif(expr, block))
+            result += Elif(expr, block)
             pos += 1
         }
         return result
@@ -35,7 +35,7 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         loop@ for (it in ctx!!.children) {
             if (it is TerminalNode) continue@loop
             val pair = parseStatement(it as LangParser.StatementContext?)
-            statements.add(pair.first)
+            statements += pair.first
             if (pair.second) {
                 break@loop
             }
@@ -49,7 +49,7 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         var pos = 0
         while (ctx.getChild(pos) is LangParser.FunctionDefContext) {
             val child = ctx.getChild(pos) as LangParser.FunctionDefContext
-            functionDefs.add(visitFunctionDef(child))
+            functionDefs += visitFunctionDef(child)
             ++pos
         }
         return Node.Program(
