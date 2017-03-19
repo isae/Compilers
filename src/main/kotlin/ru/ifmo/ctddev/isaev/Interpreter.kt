@@ -3,249 +3,127 @@ package ru.ifmo.ctddev.isaev
 /**
  * @author iisaev
  */
-sealed class Node {
-    abstract fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int
-    fun interpret(): Int {
-        return interpret(HashMap(), HashMap())
-    }
 
-    fun interpretStatements(statements: List<Node>, ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-        return statements.map { it.interpret(ctx, funCtx) }.lastOrNull() ?: 0
-    }
+fun interpret(program: Node): Int {
+    return interpret(program, HashMap(), HashMap())
+}
 
-    class Const(val number: Int) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            return number
+fun interpretStatements(statements: List<Node>, ctx: MutableMap<String, Int>, funCtx: MutableMap<String, Node.FunctionDef>): Int {
+    return statements.map { interpret(it, ctx, funCtx) }.lastOrNull() ?: 0
+}
+
+fun interpret(node: Node, ctx: MutableMap<String, Int>, funCtx: MutableMap<String, Node.FunctionDef>): Int {
+    return when (node) {
+        is Node.Skip -> 0
+        is Node.Const -> node.number
+        is Node.Variable -> ctx[node.name] as Int
+        is Node.UnaryMinus -> -interpret(node.arg, ctx, funCtx)
+        is Node.Binary -> {
+            val left = interpret(node.left, ctx, funCtx)
+            val right = interpret(node.right, ctx, funCtx)
+            return when (node) {
+                is Node.Binary.Add -> left + right
+                is Node.Binary.Sub -> left - right
+                is Node.Binary.Mul -> left * right
+                is Node.Binary.And -> left.and(right)
+                is Node.Binary.Or -> left.or(right)
+                is Node.Binary.Div -> left / right
+                is Node.Binary.Mod -> left % right
+                is Node.Binary.Eq -> if (left == right) 1 else 0
+                is Node.Binary.Neq -> if (left != right) 1 else 0
+                is Node.Binary.Lesser -> if (left < right) 1 else 0
+                is Node.Binary.Greater -> if (left > right) 1 else 0
+                is Node.Binary.Leq -> if (left <= right) 1 else 0
+                is Node.Binary.Geq -> if (left >= right) 1 else 0
+            }
         }
-    }
-
-    class Skip : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            return 0
-        }
-    }
-
-    class Variable(val name: String) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            return ctx[name] as Int
-        }
-    }
-
-    abstract class Binary(val left: Node, val right: Node) : Node() {
-        abstract fun eval(left: Int, right: Int): Int
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            return eval(
-                    left.interpret(ctx, funCtx),
-                    right.interpret(ctx, funCtx)
-            )
-        }
-    }
-
-    class Add(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return left + right
-        }
-    }
-
-    class Sub(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return left - right
-        }
-    }
-
-    class Mul(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return left * right
-        }
-    }
-
-    class And(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return left.and(right)
-        }
-    }
-
-    class Or(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return left.or(right)
-        }
-    }
-
-    class Div(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return left / right
-        }
-    }
-
-    class Mod(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return left % right
-        }
-    }
-
-    class Eq(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return if (left == right) 1 else 0
-        }
-    }
-
-    class Neq(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return if (left != right) 1 else 0
-        }
-    }
-
-    class Lesser(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return if (left < right) 1 else 0
-        }
-    }
-
-    class Greater(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return if (left > right) 1 else 0
-        }
-    }
-
-    class Leq(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return if (left <= right) 1 else 0
-        }
-    }
-
-    class Geq(l: Node, r: Node) : Binary(l, r) {
-        override fun eval(left: Int, right: Int): Int {
-            return if (left >= right) 1 else 0
-        }
-    }
-
-    class Dand(val left: Node, val right: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            val left = left.interpret(ctx, funCtx)
+        is Node.Dand -> {
+            val left = interpret(node.left, ctx, funCtx)
             if (left != 0) {
-                return left.and(right.interpret(ctx, funCtx))
+                return left.and(interpret(node.right, ctx, funCtx))
             } else {
                 return 0
             }
         }
-    }
-
-    class Dor(val left: Node, val right: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            val left = left.interpret(ctx, funCtx)
+        is Node.Dor -> {
+            val left = interpret(node.left, ctx, funCtx)
             if (left != 0) {
                 return left
             } else {
-                return left.or(right.interpret(ctx, funCtx))
+                return left.or(interpret(node.right, ctx, funCtx))
             }
         }
-    }
-
-    class FunctionCall(val functionName: String, val args: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            //TODO: think about variables scoping
-            val callArgs = args.map {
+        is Node.FunctionCall -> {
+            val callArgs = node.args.map {
                 when (it) {
-                    is Const -> it.number
-                    else -> it.interpret(ctx, funCtx)
+                    is Node.Const -> it.number
+                    else -> interpret(it, ctx, funCtx)
                 }
             }
-            return when (functionName) {
+            return when (node.functionName) {
                 "read" -> readLine()!!.toInt()
                 "write" -> {
                     callArgs.forEach(::println)
                     return 0
                 }
                 else -> {
-                    val function = funCtx[functionName] ?: throw IllegalStateException("Invalid function name: $functionName")
+                    val function = funCtx[node.functionName] ?: throw IllegalStateException("Invalid function name: $node.functionName")
                     val localCtx = HashMap<String, Int>()
                     if (function.argNames.size != callArgs.size) {
-                        throw IllegalStateException("Argument number mismatch for function call $functionName")
+                        throw IllegalStateException("Argument number mismatch for function call $node.functionName")
                     }
                     function.argNames.forEachIndexed { i, s -> localCtx[s] = callArgs[i] }
-                    return function.interpret(localCtx, funCtx)
+                    return interpret(function, localCtx, funCtx)
                 }
             }
         }
-    }
-
-    class FunctionDef(val functionName: String, val argNames: List<String>, val body: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            return interpretStatements(body, ctx, funCtx)
-        }
-
-    }
-
-    class Program(val functions: List<FunctionDef>, val statements: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            functions.forEach {
+        is Node.FunctionDef -> interpretStatements(node.body, ctx, funCtx)
+        is Node.Program -> {
+            node.functions.forEach {
                 if (funCtx.containsKey(it.functionName)) {
                     throw IllegalStateException("Duplicate function: ${it.functionName}")
                 } else {
                     funCtx.put(it.functionName, it)
                 }
             }
-            return interpretStatements(statements, ctx, funCtx)
+            return interpretStatements(node.statements, ctx, funCtx)
         }
-    }
-
-    class Conditional(val expr: Node, val ifTrue: List<Node>, val elifs: List<Elif>, val ifFalse: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            val isTrue = expr.interpret(ctx, funCtx) > 0
-            if (isTrue) return interpretStatements(ifTrue, ctx, funCtx)
-            for (elif in elifs) {
-                if (elif.expr.interpret(ctx, funCtx) > 0){
+        is Node.Conditional -> {
+            val isTrue = interpret(node.expr, ctx, funCtx) > 0
+            if (isTrue) return interpretStatements(node.ifTrue, ctx, funCtx)
+            for (elif in node.elifs) {
+                if (interpret(elif.expr, ctx, funCtx) > 0) {
                     return interpretStatements(elif.code, ctx, funCtx)
                 }
             }
-            return interpretStatements(ifFalse, ctx, funCtx)
+            return interpretStatements(node.ifFalse, ctx, funCtx)
         }
-    }
-
-    class Assignment(val variable: Variable, val toAssign: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            ctx[variable.name] = toAssign.interpret(ctx, funCtx)
+        is Node.Assignment -> {
+            ctx[node.variable.name] = interpret(node.toAssign, ctx, funCtx)
             return 0
         }
-    }
-
-    class WhileLoop(val expr: Node, val loop: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+        is Node.WhileLoop -> {
             var last = 0
-            while (expr.interpret(ctx, funCtx) > 0) {
-                last = interpretStatements(loop, ctx, funCtx)
+            while (interpret(node.expr, ctx, funCtx) > 0) {
+                last = interpretStatements(node.loop, ctx, funCtx)
             }
             return last
         }
-    }
-
-    class UnaryMinus(val arg: Node) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            return -arg.interpret(ctx, funCtx)
-        }
-    }
-
-    class ForLoop(val init: List<Node>, val expr: Node, val increment: List<Node>, val code: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+        is Node.ForLoop -> {
             var last = 0
-            interpretStatements(init, ctx, funCtx)
-            while (expr.interpret(ctx, funCtx) != 0) {
-                last = interpretStatements(code, ctx, funCtx)
-                interpretStatements(increment, ctx, funCtx)
+            interpretStatements(node.init, ctx, funCtx)
+            while (interpret(node.expr, ctx, funCtx) != 0) {
+                last = interpretStatements(node.code, ctx, funCtx)
+                interpretStatements(node.increment, ctx, funCtx)
             }
             return last
         }
-    }
-
-    class RepeatLoop(val expr: Node, val loop: List<Node>) : Node() {
-        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            var last = interpretStatements(loop, ctx, funCtx)
-            while (expr.interpret(ctx, funCtx) == 0) {
-                last = interpretStatements(loop, ctx, funCtx)
+        is Node.RepeatLoop -> {
+            var last = interpretStatements(node.loop, ctx, funCtx)
+            while (interpret(node.expr, ctx, funCtx) == 0) {
+                last = interpretStatements(node.loop, ctx, funCtx)
             }
             return last
         }
     }
 }
-
-data class Elif(val expr: Node, val code: List<Node>)

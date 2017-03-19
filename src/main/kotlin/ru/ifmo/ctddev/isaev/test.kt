@@ -7,20 +7,6 @@ import ru.ifmo.ctddev.isaev.parser.LangParser
 import java.io.File
 
 
-/**
- * @author iisaev
- */
-/*fun main(args: Array<String>) {
-        val programText = """x:=1;
-if x  then     write(1)   
-else  write(2)
-
-
-fi"""
-        println(programText)
-        interpret(programText)
-}*/
-
 fun main(args: Array<String>) {
     while (true) {
         val testName = readLine()
@@ -30,15 +16,15 @@ fun main(args: Array<String>) {
         println(programText)
         println("Input: $input")
         println("Output: $output")
-        interpret(programText)
+        run(programText)
     }
 }
 
-private fun interpret(program: String) {
+private fun run(program: String) {
     val lexer = LangLexer(ANTLRInputStream(program))
     val tokens = CommonTokenStream(lexer)
     val parser = LangParser(tokens)
     val programTree = parser.program()
     val rootNode = ASTBuilder().visitProgram(programTree)
-    rootNode.interpret()
+    interpret(rootNode)
 }
