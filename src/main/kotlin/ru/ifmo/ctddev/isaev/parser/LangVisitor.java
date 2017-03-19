@@ -59,6 +59,12 @@ public interface LangVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCond(LangParser.CondContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link LangParser#elifs}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitElifs(LangParser.ElifsContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link LangParser#argList}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

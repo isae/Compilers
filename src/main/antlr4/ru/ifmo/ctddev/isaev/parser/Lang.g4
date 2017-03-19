@@ -28,8 +28,12 @@ repeatLoop
     ;    
    
 cond
-    : 'if' expr 'then' codeBlock ('else' codeBlock)? 'fi'
+    : 'if' expr 'then' codeBlock elifs ('else' codeBlock)? 'fi'
     ;
+
+elifs
+    : (ELIF expr THEN codeBlock)*;
+
 
 argList
     : expr? ( ',' expr)*
@@ -40,15 +44,16 @@ functionCall
     ;
 
 functionDef
-    : 'fun' variable '(' argList ')' 'begin' codeBlock 'end'
+    : 'fun' variable '(' argList ')' 'begin' codeBlock END
     ;
   
 /* Logical operations have the lowest precedence. */
 expr
     :    addition 
              ( '<' addition  | '<=' addition | '>' addition | '>=' addition     
-             | '==' addition | '!=' addition | '|' addition | '||' addition
-             | '&' addition  | '&&' addition
+             | '==' addition | '!=' addition 
+             | '&' addition  | '|' addition 
+             | '&&' addition | '||' addition 
              )*
     ;
         
@@ -84,6 +89,7 @@ BEGIN : 'begin';
 OD : 'od';   
 FI : 'fi';    
 END : 'end';   
+ELIF : 'elif';   
 
 // Accepted characters
 fragment Letter   :    [A-Za-z_];

@@ -9,6 +9,23 @@ import ru.ifmo.ctddev.isaev.parser.LangVisitor
  * @author iisaev
  */
 class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
+    override fun visitElifs(ctx: LangParser.ElifsContext?): Node {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    fun parseElifs(ctx: LangParser.ElifsContext?): List<Elif> {
+        assert(ctx!!.childCount % 4 == 0)
+        val result = ArrayList<Elif>()
+        var pos = 0
+        while ((pos * 4 + 3) < ctx.childCount) {
+            val expr = visitExpr(ctx.getChild(pos * 4 + 1) as LangParser.ExprContext)
+            val block = visitStatements((ctx.getChild(pos * 4 + 3) as LangParser.CodeBlockContext))
+            result.add(Elif(expr, block))
+            pos += 1
+        }
+        return result
+    }
+
     override fun visitCodeBlock(ctx: LangParser.CodeBlockContext?): Node {
         TODO("not implemented")
     }
@@ -97,13 +114,14 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     }
 
     override fun visitCond(ctx: LangParser.CondContext?): Node.Conditional {
-        assert(ctx!!.childCount == 5 || ctx.childCount == 7)
+        assert(ctx!!.childCount == 6 || ctx.childCount == 8)
         val expr = visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
         val ifTrue = visitStatements(ctx.getChild(3) as LangParser.CodeBlockContext)
-        val ifFalse = if (ctx.childCount == 7)
-            visitStatements(ctx.getChild(5) as LangParser.CodeBlockContext) else
+        val elifs = parseElifs(ctx.getChild(4) as LangParser.ElifsContext)
+        val ifFalse = if (ctx.childCount == 8)
+            visitStatements(ctx.getChild(6) as LangParser.CodeBlockContext) else
             emptyList<Node>()
-        return Node.Conditional(expr, ifTrue, ifFalse)
+        return Node.Conditional(expr, ifTrue, elifs, ifFalse)
     }
 
     override fun visitArgList(ctx: LangParser.ArgListContext?): Node {

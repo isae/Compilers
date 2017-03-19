@@ -150,6 +150,7 @@ sealed class Node {
                     else -> it.interpret(ctx, funCtx)
                 }
             }
+            println("Call $functionName with $callArgs")
             return when (functionName) {
                 "read" -> readLine()!!.toInt()
                 "write" -> {
@@ -189,10 +190,16 @@ sealed class Node {
         }
     }
 
-    class Conditional(val expr: Node, val ifTrue: List<Node>, val ifFalse: List<Node>) : Node() {
+    class Conditional(val expr: Node, val ifTrue: List<Node>, val elifs: List<Elif>, val ifFalse: List<Node>) : Node() {
         override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             val isTrue = expr.interpret(ctx, funCtx) > 0
-            return if (isTrue) interpretStatements(ifTrue, ctx, funCtx) else interpretStatements(ifFalse, ctx, funCtx)
+            if (isTrue) return interpretStatements(ifTrue, ctx, funCtx)
+            for (elif in elifs) {
+                if (elif.expr.interpret(ctx, funCtx) > 0){
+                    return interpretStatements(elif.code, ctx, funCtx)
+                }
+            }
+            return interpretStatements(ifFalse, ctx, funCtx)
         }
     }
 
@@ -241,3 +248,5 @@ sealed class Node {
         }
     }
 }
+
+data class Elif(val expr: Node, val code: List<Node>)
