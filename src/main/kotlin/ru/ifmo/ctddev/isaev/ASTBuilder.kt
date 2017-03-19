@@ -154,11 +154,18 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     }
 
     override fun visitAddition(ctx: LangParser.AdditionContext?): Node {
-        if (ctx!!.childCount == 1) {
-            return visitMultiplication(ctx.getChild(0) as LangParser.MultiplicationContext?)
+        val firstSign = ctx!!.getChild(0) is TerminalNode
+        val isMinus = firstSign && ctx.getChild(0).text == "-"
+        val oneChild = if (firstSign) 1 else 0
+        if (ctx.childCount == 1 + oneChild) {
+            val mul = visitMultiplication(ctx.getChild(0) as LangParser.MultiplicationContext?)
+            return if (isMinus) Node.UnaryMinus(mul) else mul
         } else {
-            var pos = 1
-            var left = visitMultiplication(ctx.getChild(0) as LangParser.MultiplicationContext?)
+            var pos = 1 + oneChild
+            var left = visitMultiplication(ctx.getChild(oneChild) as LangParser.MultiplicationContext?)
+            if (isMinus) {
+                left = Node.UnaryMinus(left)
+            }
             while (pos < ctx.childCount) {
                 val term = ctx.getChild(pos) as TerminalNode
                 val right = visitMultiplication(ctx.getChild(pos + 1) as LangParser.MultiplicationContext?)

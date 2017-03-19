@@ -66,7 +66,7 @@ expr
     ;
         
 addition
-    :    multiplication 
+    :    ('+'|'-')? multiplication 
          (
              ( '+' multiplication 
              | '-' multiplication
@@ -75,14 +75,7 @@ addition
     ;
 
 multiplication
-    :    atom
-         (
-             ( '*' atom 
-             | '/' atom
-             | '%' atom
-             )
-         )* 
-    ;
+    :    atom ( '*' atom  | '/' atom | '%' atom )* ;
 
 atom
     :    variable
@@ -104,17 +97,18 @@ FUN : 'fun' { ignore = false; } WS { ignore = true; };
 RETURN : 'return' { ignore = false; } WS { ignore = true; };  
   
 DO : { ignore = false; } WS+ 'do'  WS+ { ignore = true; };    
-OD : { ignore = false; } WS+ 'od' { ignore = true; };   
 THEN : { ignore = false; } WS+ 'then'  WS+ { ignore = true; };   
 ELSE : { ignore = false; } WS+ 'else'  WS+ { ignore = true; };   
 UNTIL : { ignore = false; } WS+ 'until'  WS+ { ignore = true; };  
 BEGIN : { ignore = false; } WS+ 'begin'  WS+ { ignore = true; };  
  
-FI : { ignore = false; } WS+ 'fi' { ignore = true; };    
-END : { ignore = false; } WS+ 'end' { ignore = true; };    
+OD : { ignore = false; } WS+ 'od' (WS+|EOF) { ignore = true; };   
+FI : { ignore = false; } WS+ 'fi' (WS+|EOF) { ignore = true; };    
+END : { ignore = false; } WS+ 'end' (WS+|EOF) { ignore = true; };    
 
-Var      :    ('A'..'Z'|'a'..'z'|'_')+;
-Number   :    ('+'|'-')?('0'..'9')+;
+fragment Letter   :    ('A'..'Z'|'a'..'z'|'_');
+Number   :    ('0'..'9')+;
+Var      :    Letter (Letter | Number)*;
 String   :    '"'.*?'"';
 Val      :    Number;
 

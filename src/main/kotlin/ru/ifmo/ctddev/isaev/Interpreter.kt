@@ -208,4 +208,10 @@ sealed class Node {
             return last
         }
     }
+
+    class UnaryMinus(val arg: Node) : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            return -arg.interpret(ctx, funCtx)
+        }
+    }
 }
