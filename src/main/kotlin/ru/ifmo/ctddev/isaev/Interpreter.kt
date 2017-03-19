@@ -230,4 +230,14 @@ sealed class Node {
             return last
         }
     }
+
+    class RepeatLoop(val expr: Node, val loop: List<Node>) : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            var last = interpretStatements(loop, ctx, funCtx)
+            while (expr.interpret(ctx, funCtx) == 0) {
+                last = interpretStatements(loop, ctx, funCtx)
+            }
+            return last
+        }
+    }
 }

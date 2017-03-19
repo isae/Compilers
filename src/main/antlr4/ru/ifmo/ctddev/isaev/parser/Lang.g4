@@ -28,7 +28,7 @@ repeatLoop
     ;    
    
 cond
-    : 'if' expr 'then' codeBlock 'else' codeBlock 'fi'
+    : 'if' expr 'then' codeBlock ('else' codeBlock)? 'fi'
     ;
 
 argList

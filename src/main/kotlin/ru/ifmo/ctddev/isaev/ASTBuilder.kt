@@ -97,15 +97,20 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         return Node.ForLoop(init, expr, increment, code)
     }
 
-    override fun visitRepeatLoop(ctx: LangParser.RepeatLoopContext?): Node {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitRepeatLoop(ctx: LangParser.RepeatLoopContext?): Node.RepeatLoop {
+        assert(ctx!!.childCount == 4)
+        val expr = visitExpr(ctx.getChild(3) as LangParser.ExprContext?)
+        val code = visitStatements(ctx.getChild(1) as LangParser.CodeBlockContext?)
+        return Node.RepeatLoop(expr, code)
     }
 
     override fun visitCond(ctx: LangParser.CondContext?): Node.Conditional {
-        assert(ctx!!.childCount == 7)
+        assert(ctx!!.childCount == 5 || ctx.childCount == 7)
         val expr = visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
         val ifTrue = visitStatements(ctx.getChild(3) as LangParser.CodeBlockContext)
-        val ifFalse = visitStatements(ctx.getChild(5) as LangParser.CodeBlockContext)
+        val ifFalse = if (ctx.childCount == 7)
+            visitStatements(ctx.getChild(5) as LangParser.CodeBlockContext) else
+            emptyList<Node>()
         return Node.Conditional(expr, ifTrue, ifFalse)
     }
 
