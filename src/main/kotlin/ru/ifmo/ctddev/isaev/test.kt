@@ -34,7 +34,7 @@ private fun runInterpreter(program: AST) {
 }
 
 private fun runStackMachine(program: AST) {
-    val compiledSTM = compileSTM(program)
+    val compiledSTM = compile(program)
     compiledSTM.forEach(::println)
     runStackMachine(compiledSTM)
 }
