@@ -17,6 +17,12 @@ public interface LangVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitProgram(LangParser.ProgramContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link LangParser#codeBlock}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCodeBlock(LangParser.CodeBlockContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link LangParser#statement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

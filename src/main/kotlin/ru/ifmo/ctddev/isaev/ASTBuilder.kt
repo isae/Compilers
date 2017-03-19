@@ -9,6 +9,18 @@ import ru.ifmo.ctddev.isaev.parser.LangVisitor
  * @author iisaev
  */
 class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
+    override fun visitCodeBlock(ctx: LangParser.CodeBlockContext?): Node {
+        TODO("not implemented")
+    }
+
+    fun visitStatements(ctx: LangParser.CodeBlockContext?): List<Node> {
+        return ctx!!.children!!
+                .filter { it !is TerminalNode }
+                .map {
+                    visitStatement(it as LangParser.StatementContext?)
+                }
+    }
+
     override fun visitFunctionBody(ctx: LangParser.FunctionBodyContext?): Node.Program {
         assert(ctx!!.childCount != 0) //empty function is not valid!
         val statements = ArrayList<Node>()
@@ -38,10 +50,7 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         }
         return Node.Program(
                 functionDefs,
-                ctx.children!!
-                        .drop(pos)
-                        .filter { it !is TerminalNode }
-                        .map { visitStatement(it as LangParser.StatementContext?) }
+                visitStatements(ctx.getChild(pos) as LangParser.CodeBlockContext)
         )
     }
 
@@ -75,12 +84,17 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     override fun visitWhileLoop(ctx: LangParser.WhileLoopContext?): Node {
         assert(ctx!!.childCount == 5)
         val expr = visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
-        val loop = visitProgram(ctx.getChild(3) as LangParser.ProgramContext)
+        val loop = visitStatements(ctx.getChild(3) as LangParser.CodeBlockContext)
         return Node.WhileLoop(expr, loop)
     }
 
-    override fun visitForLoop(ctx: LangParser.ForLoopContext?): Node {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitForLoop(ctx: LangParser.ForLoopContext?): Node.ForLoop {
+        assert(ctx!!.childCount == 9)
+        val init = visitStatements(ctx.getChild(1) as LangParser.CodeBlockContext?)
+        val expr = visitExpr(ctx.getChild(3) as LangParser.ExprContext?)
+        val increment = visitStatements(ctx.getChild(5) as LangParser.CodeBlockContext?)
+        val code = visitStatements(ctx.getChild(7) as LangParser.CodeBlockContext?)
+        return Node.ForLoop(init, expr, increment, code)
     }
 
     override fun visitRepeatLoop(ctx: LangParser.RepeatLoopContext?): Node {
@@ -90,8 +104,8 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     override fun visitCond(ctx: LangParser.CondContext?): Node.Conditional {
         assert(ctx!!.childCount == 7)
         val expr = visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
-        val ifTrue = visitProgram(ctx.getChild(3) as LangParser.ProgramContext)
-        val ifFalse = visitProgram(ctx.getChild(5) as LangParser.ProgramContext)
+        val ifTrue = visitStatements(ctx.getChild(3) as LangParser.CodeBlockContext)
+        val ifFalse = visitStatements(ctx.getChild(5) as LangParser.CodeBlockContext)
         return Node.Conditional(expr, ifTrue, ifFalse)
     }
 

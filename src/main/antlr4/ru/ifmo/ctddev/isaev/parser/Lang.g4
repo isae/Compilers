@@ -1,13 +1,13 @@
 grammar Lang;
 
-@lexer::members {
-    boolean ignore=true;
-}
-
+// starting point
 program
-    :    functionDef* (statement)? (';'statement)*
+    :    functionDef* codeBlock EOF
     ;
-    
+
+codeBlock
+    :    (statement)? (';'statement)*;
+
 statement
     :    (SKIP_RULE | whileLoop | cond | forLoop | repeatLoop | functionCall | assignment |  expr)
     ;
@@ -17,18 +17,18 @@ assignment
     ;
     
 whileLoop
-    : WHILE expr DO program OD
+    : 'while' expr 'do' codeBlock 'od'
     ;
 
 forLoop
-    : FOR assignment ',' expr ','assignment DO program OD;    
+    : 'for' codeBlock ',' expr ','codeBlock 'do' codeBlock 'od';    
  
 repeatLoop
-    : REPEAT program UNTIL expr 
+    : 'repeat' codeBlock 'until' expr 
     ;    
    
 cond
-    : IF expr THEN program ELSE program FI
+    : 'if' expr 'then' codeBlock 'else' codeBlock 'fi'
     ;
 
 argList
@@ -36,7 +36,7 @@ argList
     ;
     
 functionBody
-    :    (RETURN? statement)? (';' RETURN? statement)*
+    :    ('return'? statement)? (';' 'return'? statement)*
     ;      
 
 functionCall
@@ -44,76 +44,59 @@ functionCall
     ;
 
 functionDef
-    : FUN variable '(' argList ')' BEGIN functionBody END
+    : 'fun' variable '(' argList ')' 'begin' functionBody 'end'
     ;
   
 /* Logical operations have the lowest precedence. */
 expr
     :    addition 
-         (
-             ( '<' addition 
-             | '<=' addition
-             | '>' addition
-             | '>=' addition
-             | '==' addition
-             | '!=' addition
-             | '|' addition
-             | '||' addition
-             | '&' addition
-             | '&&' addition
-             )
-         )* 
+             ( '<' addition  | '<=' addition | '>' addition | '>=' addition     
+             | '==' addition | '!=' addition | '|' addition | '||' addition
+             | '&' addition  | '&&' addition
+             )*
     ;
         
 addition
-    :    ('+'|'-')? multiplication 
-         (
-             ( '+' multiplication 
-             | '-' multiplication
-             )
-         )* 
+    :    ('+'|'-')? multiplication //unary plus/minus
+         ( '+' multiplication | '-' multiplication )*
     ;
 
 multiplication
     :    atom ( '*' atom  | '/' atom | '%' atom )* ;
 
 atom
-    :    variable
-    |    functionCall
-    |    Number
-    |    '(' expr ')'
-    ;
+    :    variable | functionCall | Number | '(' expr ')';
     
 variable: 
     Var;
     
-SKIP_RULE : 'skip'    ;
+// LEXER
+    
+// Keywords    
+SKIP_RULE : 'skip';
+WHILE : 'while';    
+REPEAT : 'repeat';    
+FOR : 'for';    
+IF : 'if';  
+FUN : 'fun';  
+RETURN : 'return';  
+DO : 'do';    
+THEN : 'then';   
+ELSE : 'else';   
+UNTIL : 'until';  
+BEGIN : 'begin';  
+OD : 'od';   
+FI : 'fi';    
+END : 'end';   
 
-WHILE : 'while' { ignore = false; } WS { ignore = true; };    
-REPEAT : 'repeat' { ignore = false; } WS { ignore = true; };    
-FOR : 'for' { ignore = false; } WS { ignore = true; };    
-IF : 'if' { ignore = false; } WS { ignore = true; };  
-FUN : 'fun' { ignore = false; } WS { ignore = true; };  
-RETURN : 'return' { ignore = false; } WS { ignore = true; };  
-  
-DO : { ignore = false; } WS+ 'do'  WS+ { ignore = true; };    
-THEN : { ignore = false; } WS+ 'then'  WS+ { ignore = true; };   
-ELSE : { ignore = false; } WS+ 'else'  WS+ { ignore = true; };   
-UNTIL : { ignore = false; } WS+ 'until'  WS+ { ignore = true; };  
-BEGIN : { ignore = false; } WS+ 'begin'  WS+ { ignore = true; };  
- 
-OD : { ignore = false; } WS+ 'od' (WS+|EOF) { ignore = true; };   
-FI : { ignore = false; } WS+ 'fi' (WS+|EOF) { ignore = true; };    
-END : { ignore = false; } WS+ 'end' (WS+|EOF) { ignore = true; };    
+// Accepted characters
+fragment Letter   :    [A-Za-z_];
+fragment LetterOrDigit   :    [A-Za-z0-9_];
+Number   :    [0-9]+;
+Var      :    Letter LetterOrDigit*;
 
-fragment Letter   :    ('A'..'Z'|'a'..'z'|'_');
-Number   :    ('0'..'9')+;
-Var      :    Letter (Letter | Number)*;
-String   :    '"'.*?'"';
-Val      :    Number;
-
-
+// Whitespaces
 WS  
-    :   (' ' | '\t' | '\r'| '\n')  { if(ignore) skip(); };
+    :   [ \t\r\n] -> skip;
     
     

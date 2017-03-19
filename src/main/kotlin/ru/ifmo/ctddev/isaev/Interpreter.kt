@@ -9,6 +9,10 @@ sealed class Node {
         return interpret(HashMap(), HashMap())
     }
 
+    fun interpretStatements(statements: List<Node>, ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+        return statements.map { it.interpret(ctx, funCtx) }.lastOrNull() ?: 0
+    }
+
     class Const(val number: Int) : Node() {
         override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             return number
@@ -181,14 +185,14 @@ sealed class Node {
                     funCtx.put(it.functionName, it)
                 }
             }
-            return statements.map { it.interpret(ctx, funCtx) }.lastOrNull() ?: 0
+            return interpretStatements(statements, ctx, funCtx)
         }
     }
 
-    class Conditional(val expr: Node, val ifTrue: Node, val ifFalse: Node) : Node() {
+    class Conditional(val expr: Node, val ifTrue: List<Node>, val ifFalse: List<Node>) : Node() {
         override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             val isTrue = expr.interpret(ctx, funCtx) > 0
-            return if (isTrue) ifTrue.interpret(ctx, funCtx) else ifFalse.interpret(ctx, funCtx);
+            return if (isTrue) interpretStatements(ifTrue, ctx, funCtx) else interpretStatements(ifFalse, ctx, funCtx)
         }
     }
 
@@ -199,11 +203,11 @@ sealed class Node {
         }
     }
 
-    class WhileLoop(val expr: Node, val loop: Node) : Node() {
+    class WhileLoop(val expr: Node, val loop: List<Node>) : Node() {
         override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             var last = 0
             while (expr.interpret(ctx, funCtx) > 0) {
-                last = loop.interpret(ctx, funCtx)
+                last = interpretStatements(loop, ctx, funCtx)
             }
             return last
         }
@@ -212,6 +216,18 @@ sealed class Node {
     class UnaryMinus(val arg: Node) : Node() {
         override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
             return -arg.interpret(ctx, funCtx)
+        }
+    }
+
+    class ForLoop(val init: List<Node>, val expr: Node, val increment: List<Node>, val code: List<Node>) : Node() {
+        override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
+            var last = 0
+            interpretStatements(init, ctx, funCtx)
+            while (expr.interpret(ctx, funCtx) != 0) {
+                last = interpretStatements(code, ctx, funCtx)
+                interpretStatements(increment, ctx, funCtx)
+            }
+            return last
         }
     }
 }
