@@ -81,12 +81,6 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             compile(node.right, stack)
             stack += StackOp.Binop(node.op)
         }
-        is AST.Dand -> {
-            TODO("&&")
-        }
-        is AST.Dor -> {
-            TODO("||")
-        }
         is AST.FunctionCall -> {
             when (node.functionName) {
                 "read" -> stack += StackOp.Read()
@@ -108,8 +102,8 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             }
             compile(node.expr, stack)
             val ifTrue = compile(node.ifTrue)
-            val pos = stack.size + ifTrue.size + 1 // +1 for jump  
-            stack += StackOp.Jump(pos)
+            val ifTrueSize = ifTrue.size + 1 // +1 for jump  
+            stack += StackOp.Jump(ifTrueSize)
             stack += ifTrue
             stack += compile(node.ifFalse)
         }
@@ -117,13 +111,22 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             compile(node.toAssign, stack)
             stack += StackOp.St(node.variable.name)
         }
-        is AST.WhileLoop -> TODO("While loops")
+        is AST.WhileLoop -> {
+            val backJumpPos = stack.size
+            compile(node.expr, stack)
+            val loop = compile(node.loop)
+            val frontJumpPos = loop.size + 3 // +3 for front and back jump (2 ops)   
+            stack += StackOp.Jump(frontJumpPos)
+            stack += loop
+            stack += StackOp.Push(0)
+            stack += StackOp.Jump(backJumpPos - stack.size)
+        }
         is AST.ForLoop -> TODO("For loops")
         is AST.RepeatLoop -> {
             val pos = stack.size
             node.loop.forEach { compile(it, stack) }
             compile(node.expr, stack) // we have zero if condition is unsuccessful
-            stack += StackOp.Jump(pos)
+            stack += StackOp.Jump(pos - stack.size)
         }
     }
 }
@@ -164,7 +167,7 @@ fun runStackMachine(operations: List<StackOp>) {
             is StackOp.Jump -> {
                 val condition = s.pop()
                 if (condition == 0) {
-                    ip = it.pos - 1
+                    ip += it.pos - 1
                 }
             }
         }

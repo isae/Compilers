@@ -180,8 +180,9 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
                 ">=" -> AST.Binary.Geq(left, right)
                 "&" -> AST.Binary.And(left, right)
                 "|" -> AST.Binary.Or(left, right)
-                "&&" -> AST.Dand(left, right)
-                "||" -> AST.Dor(left, right)
+                "&&" -> AST.Conditional(AST.Binary.Eq(left, AST.Const(0)), listOf(AST.Const(0)), emptyList(), listOf(right))
+            // TODO: here we treat numbers as booleans (replacing positive value with 1)
+                "||" -> AST.Conditional(AST.Binary.Neq(left, AST.Const(0)), listOf(AST.Const(1)), emptyList(), listOf(right))
                 else -> throw IllegalStateException("Unknown term in expression: ${term.text}")
             }
         }

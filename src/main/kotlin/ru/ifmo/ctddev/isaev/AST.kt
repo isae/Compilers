@@ -43,8 +43,6 @@ sealed class AST {
         class Geq(l: AST, r: AST) : Binary(l, r, ">=")
     }
 
-    class Dand(val left: AST, val right: AST) : AST()
-    class Dor(val left: AST, val right: AST) : AST()
     class FunctionCall(val functionName: String, val args: List<AST>) : AST()
     class FunctionDef(val functionName: String, val argNames: List<String>, val body: List<AST>) : AST()
     class Program(val functions: List<FunctionDef>, val statements: List<AST>) : AST()

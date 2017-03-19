@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
         println("Input: $input")
         println("Output: $output")
         val program = buildAST(programText)
-        runStackMachine(program)
+        runInterpreter(program)
     }
 }
 
@@ -35,6 +35,6 @@ private fun runInterpreter(program: AST) {
 
 private fun runStackMachine(program: AST) {
     val compiledSTM = compile(program)
-    compiledSTM.forEach(::println)
+    compiledSTM.forEachIndexed { i, op -> println("$i: $op") }
     runStackMachine(compiledSTM)
 }

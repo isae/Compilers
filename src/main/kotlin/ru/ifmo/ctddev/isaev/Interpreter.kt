@@ -23,22 +23,6 @@ fun interpret(node: AST, ctx: MutableMap<String, Int>, funCtx: MutableMap<String
                 interpret(node.right, ctx, funCtx),
                 node.op
         )
-        is AST.Dand -> {
-            val left = interpret(node.left, ctx, funCtx)
-            if (left != 0) {
-                return left.and(interpret(node.right, ctx, funCtx))
-            } else {
-                return 0
-            }
-        }
-        is AST.Dor -> {
-            val left = interpret(node.left, ctx, funCtx)
-            if (left != 0) {
-                return left
-            } else {
-                return left.or(interpret(node.right, ctx, funCtx))
-            }
-        }
         is AST.FunctionCall -> {
             val callArgs = node.args.map {
                 when (it) {
