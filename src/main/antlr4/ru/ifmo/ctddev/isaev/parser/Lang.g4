@@ -9,7 +9,7 @@ codeBlock
     :    (statement)? (';'statement)*;
 
 statement
-    :    (SKIP_RULE | whileLoop | cond | forLoop | repeatLoop | functionCall | assignment |  expr)
+    :    'return'? ('skip' | whileLoop | cond | forLoop | repeatLoop | functionCall | assignment |  expr)
     ;
 
 assignment
@@ -35,16 +35,12 @@ argList
     : expr? ( ',' expr)*
     ;
     
-functionBody
-    :    ('return'? statement)? (';' 'return'? statement)*
-    ;      
-
 functionCall
     : variable '(' argList ')'
     ;
 
 functionDef
-    : 'fun' variable '(' argList ')' 'begin' functionBody 'end'
+    : 'fun' variable '(' argList ')' 'begin' codeBlock 'end'
     ;
   
 /* Logical operations have the lowest precedence. */
@@ -73,7 +69,7 @@ variable:
 // LEXER
     
 // Keywords    
-SKIP_RULE : 'skip';
+SKIP_ : 'skip';
 WHILE : 'while';    
 REPEAT : 'repeat';    
 FOR : 'for';    

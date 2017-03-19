@@ -65,12 +65,6 @@ public interface LangVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArgList(LangParser.ArgListContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link LangParser#functionBody}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFunctionBody(LangParser.FunctionBodyContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link LangParser#functionCall}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

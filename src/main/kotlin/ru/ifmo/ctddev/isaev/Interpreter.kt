@@ -169,9 +169,9 @@ sealed class Node {
         }
     }
 
-    class FunctionDef(val functionName: String, val argNames: List<String>, val body: Program) : Node() {
+    class FunctionDef(val functionName: String, val argNames: List<String>, val body: List<Node>) : Node() {
         override fun interpret(ctx: MutableMap<String, Int>, funCtx: MutableMap<String, FunctionDef>): Int {
-            return body.interpret(ctx, funCtx)
+            return interpretStatements(body, ctx, funCtx)
         }
 
     }

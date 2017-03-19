@@ -14,29 +14,16 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     }
 
     fun visitStatements(ctx: LangParser.CodeBlockContext?): List<Node> {
-        return ctx!!.children!!
-                .filter { it !is TerminalNode }
-                .map {
-                    visitStatement(it as LangParser.StatementContext?)
-                }
-    }
-
-    override fun visitFunctionBody(ctx: LangParser.FunctionBodyContext?): Node.Program {
-        assert(ctx!!.childCount != 0) //empty function is not valid!
         val statements = ArrayList<Node>()
-        var pos = 0
-        var child = ctx.getChild(pos)
-        while (!(child is TerminalNode && child.text.startsWith("return"))) {
-            // searching for return
-            if (child !is TerminalNode) {
-                val stmt = ctx.getChild(pos) as LangParser.StatementContext
-                statements.add(visitStatement(stmt))
+        loop@ for (it in ctx!!.children) {
+            if (it is TerminalNode) continue@loop
+            val pair = parseStatement(it as LangParser.StatementContext?)
+            statements.add(pair.first)
+            if (pair.second) {
+                break@loop
             }
-            ++pos
-            child = ctx.getChild(pos)
         }
-        statements.add(visitStatement(ctx.getChild(pos + 1) as LangParser.StatementContext))
-        return Node.Program(emptyList(), statements)
+        return statements
     }
 
     override fun visitProgram(ctx: LangParser.ProgramContext?): Node.Program {
@@ -55,18 +42,23 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
     }
 
     override fun visitStatement(ctx: LangParser.StatementContext?): Node {
-        assert(ctx!!.childCount == 1)
-        val child = ctx.getChild(0)
+        TODO("not implemented")
+    }
+
+    fun parseStatement(ctx: LangParser.StatementContext?): Pair<Node, Boolean> {
+        assert(ctx!!.childCount == 1 || ctx.childCount == 2)
+        val isLast = ctx.getChild(0) is TerminalNode && ctx.getChild(0).text == "return"
+        val child = if (isLast) ctx.getChild(1) else ctx.getChild(0)
         return when (child) {
-            is LangParser.AssignmentContext -> visitAssignment(child)
-            is LangParser.FunctionCallContext -> visitFunctionCall(child)
-            is LangParser.CondContext -> visitCond(child)
-            is LangParser.WhileLoopContext -> visitWhileLoop(child)
-            is LangParser.ForLoopContext -> visitForLoop(child)
-            is LangParser.RepeatLoopContext -> visitRepeatLoop(child)
-            is LangParser.ExprContext -> visitExpr(child)
+            is LangParser.AssignmentContext -> Pair(visitAssignment(child), isLast)
+            is LangParser.FunctionCallContext -> Pair(visitFunctionCall(child), isLast)
+            is LangParser.CondContext -> Pair(visitCond(child), isLast)
+            is LangParser.WhileLoopContext -> Pair(visitWhileLoop(child), isLast)
+            is LangParser.ForLoopContext -> Pair(visitForLoop(child), isLast)
+            is LangParser.RepeatLoopContext -> Pair(visitRepeatLoop(child), isLast)
+            is LangParser.ExprContext -> Pair(visitExpr(child), isLast)
             is TerminalNode -> {
-                if (child.text == "skip") Node.Skip() else
+                if (child.text == "skip") Pair(Node.Skip(), isLast) else
                     throw IllegalArgumentException("Invalid terminal statement: ${child.text}")
             }
             else -> throw IllegalArgumentException("Unknown node: ${child::class}")
@@ -136,7 +128,7 @@ class ASTBuilder : AbstractParseTreeVisitor<Node>(), LangVisitor<Node> {
         assert(ctx!!.childCount == 8)
         val functionName = visitVariable(ctx.getChild(1) as LangParser.VariableContext)
         val args = visitArgs(ctx.getChild(3) as LangParser.ArgListContext)
-        val body = visitFunctionBody(ctx.getChild(6) as LangParser.FunctionBodyContext)
+        val body = visitStatements(ctx.getChild(6) as LangParser.CodeBlockContext)
         return Node.FunctionDef(
                 functionName.name,
                 args.map { it as Node.Variable }.map { it.name },
