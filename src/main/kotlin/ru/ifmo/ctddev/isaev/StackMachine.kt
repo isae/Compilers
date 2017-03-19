@@ -10,77 +10,85 @@ sealed class StackOp {
     class Binop(val arg: String) : StackOp()
 }
 
-fun compile(node: Node): List<StackOp> {
+public fun compileSTM(node: AST): List<StackOp> {
     val result = ArrayList<StackOp>()
     compile(node, result)
     return result
 }
 
-fun compile(node: Node, stack: MutableList<StackOp>) {
+private fun compile(node: AST, stack: MutableList<StackOp>) {
     when (node) {
-        is Node.Skip -> stack += StackOp.Nop()
-        is Node.Const -> stack += StackOp.Push(node.number)
-        is Node.Variable -> stack += StackOp.Ld(node.name)
-        is Node.UnaryMinus -> { // -a == 0-a
+        is AST.Skip -> stack += StackOp.Nop()
+        is AST.Const -> stack += StackOp.Push(node.number)
+        is AST.Variable -> stack += StackOp.Ld(node.name)
+        is AST.UnaryMinus -> { // -a == 0-a
             stack += StackOp.Push(0)
-            compile(node.arg)
+            compile(node.arg, stack)
             stack += StackOp.Binop("-")
         }
-        is Node.Binary -> {
-            compile(node.left)
-            compile(node.right)
+        is AST.Binary -> {
+            compile(node.left, stack)
+            compile(node.right, stack)
             stack += StackOp.Binop(node.op)
         }
-        is Node.Dand -> {
+        is AST.Dand -> {
             TODO("&& is not supported yet")
         }
-        is Node.Dor -> {
+        is AST.Dor -> {
             TODO("|| is not supported yet")
         }
-        is Node.FunctionCall -> {
+        is AST.FunctionCall -> {
             when (node.functionName) {
                 "read" -> stack += StackOp.Read()
                 "write" -> {
                     if (node.args.size != 1) {
                         TODO("Vararg write is not supported yet")
                     }
-                    compile(node.args[0])
+                    compile(node.args[0], stack)
                     stack += StackOp.Write()
                 }
                 else -> TODO("Function calls are not supported yet")
             }
         }
-        is Node.FunctionDef -> TODO("Function definitions are not supported yet")
-        is Node.Program -> node.statements.forEach { compile(it, stack) }
-        is Node.Conditional -> TODO("Conditions are not supported yet")
-        is Node.Assignment -> {
-            compile(node.toAssign)
+        is AST.FunctionDef -> TODO("Function definitions are not supported yet")
+        is AST.Program -> node.statements.forEach { compile(it, stack) }
+        is AST.Conditional -> TODO("Conditions are not supported yet")
+        is AST.Assignment -> {
+            compile(node.toAssign, stack)
             stack += StackOp.St(node.variable.name)
         }
-        is Node.WhileLoop -> TODO("While loops are not supported yet")
-        is Node.ForLoop -> TODO("For loops are not supported yet")
-        is Node.RepeatLoop -> TODO("Repeat loops are not supported yet")
+        is AST.WhileLoop -> TODO("While loops are not supported yet")
+        is AST.ForLoop -> TODO("For loops are not supported yet")
+        is AST.RepeatLoop -> TODO("Repeat loops are not supported yet")
     }
 }
 
 fun runStackMachine(operations: List<StackOp>) {
     val stack = ArrayList<Int>()
+    val mem = HashMap<String, Int>()
+    fun push(arg: Int) {
+        stack += arg
+    }
+
+    fun pop(): Int {
+        val res = stack.last()
+        stack.remove(stack.size - 1)
+        return res
+    }
     operations.forEach {
         when (it) {
-            is StackOp.Read -> {
-            }
-            is StackOp.Write -> {
-            }
+            is StackOp.Read -> push(readLine()!!.toInt())
+            is StackOp.Write -> println(pop())
             is StackOp.Nop -> {
             }
-            is StackOp.Push -> {
-            }
+            is StackOp.Push -> push(it.arg)
             is StackOp.Ld -> {
+                val value = mem[it.arg] ?: throw IllegalStateException("No such variable $it.arg")
+                push(value)
             }
-            is StackOp.St -> {
-            }
-            is StackOp.Binop -> {
-            }
+            is StackOp.St -> mem[it.arg] = pop()
+            is StackOp.Binop -> push(apply(pop(), pop(), it.arg))
+
         }
     }
 }

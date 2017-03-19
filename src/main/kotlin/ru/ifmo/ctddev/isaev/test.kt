@@ -16,15 +16,23 @@ fun main(args: Array<String>) {
         println(programText)
         println("Input: $input")
         println("Output: $output")
-        run(programText)
+        val program = buildAST(programText)
+        runStackMachine(program)
     }
 }
 
-private fun run(program: String) {
+fun buildAST(program: String): AST {
     val lexer = LangLexer(ANTLRInputStream(program))
     val tokens = CommonTokenStream(lexer)
     val parser = LangParser(tokens)
     val programTree = parser.program()
-    val rootNode = ASTBuilder().visitProgram(programTree)
-    interpret(rootNode)
+    return ASTBuilder().visitProgram(programTree)
+}
+
+private fun runInterpreter(program: AST) {
+    interpret(program)
+}
+
+private fun runStackMachine(program: AST) {
+    compileSTM(program).forEach { println(it) }
 }
