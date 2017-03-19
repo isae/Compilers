@@ -1,13 +1,47 @@
 package ru.ifmo.ctddev.isaev
 
 sealed class StackOp {
-    class Read : StackOp()
-    class Write : StackOp()
-    class Nop : StackOp()
-    class Push(val arg: Int) : StackOp()
-    class Ld(val arg: String) : StackOp()
-    class St(val arg: String) : StackOp()
-    class Binop(val arg: String) : StackOp()
+    class Read : StackOp() {
+        override fun toString(): String {
+            return "READ"
+        }
+    }
+
+    class Write : StackOp() {
+        override fun toString(): String {
+            return "WRITE"
+        }
+    }
+
+    class Nop : StackOp() {
+        override fun toString(): String {
+            return "NOP"
+        }
+    }
+
+    class Push(val arg: Int) : StackOp() {
+        override fun toString(): String {
+            return "PUSH $arg"
+        }
+    }
+
+    class Ld(val arg: String) : StackOp() {
+        override fun toString(): String {
+            return "LD $arg"
+        }
+    }
+
+    class St(val arg: String) : StackOp() {
+        override fun toString(): String {
+            return "ST $arg"
+        }
+    }
+
+    class Binop(val op: String) : StackOp() {
+        override fun toString(): String {
+            return "BINOP $op"
+        }
+    }
 }
 
 public fun compileSTM(node: AST): List<StackOp> {
@@ -63,31 +97,37 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
     }
 }
 
-fun runStackMachine(operations: List<StackOp>) {
-    val stack = ArrayList<Int>()
-    val mem = HashMap<String, Int>()
-    fun push(arg: Int) {
-        stack += arg
-    }
+fun MutableList<Int>.push(arg: Int) {
+    this += arg
+}
 
-    fun pop(): Int {
-        val res = stack.last()
-        stack.remove(stack.size - 1)
-        return res
-    }
+fun MutableList<Int>.pop(): Int {
+    val res = this.last()
+    removeAt(this.size - 1)
+    return res
+}
+
+fun runStackMachine(operations: List<StackOp>) {
+    val s = ArrayList<Int>()
+    val mem = HashMap<String, Int>()
+
     operations.forEach {
         when (it) {
-            is StackOp.Read -> push(readLine()!!.toInt())
-            is StackOp.Write -> println(pop())
+            is StackOp.Read -> s.push(readLine()!!.toInt())
+            is StackOp.Write -> println(s.pop())
             is StackOp.Nop -> {
             }
-            is StackOp.Push -> push(it.arg)
+            is StackOp.Push -> s.push(it.arg)
             is StackOp.Ld -> {
                 val value = mem[it.arg] ?: throw IllegalStateException("No such variable $it.arg")
-                push(value)
+                s.push(value)
             }
-            is StackOp.St -> mem[it.arg] = pop()
-            is StackOp.Binop -> push(apply(pop(), pop(), it.arg))
+            is StackOp.St -> mem[it.arg] = s.pop()
+            is StackOp.Binop -> {
+                val right = s.pop()
+                val left = s.pop()
+                s.push(apply(left, right, it.op))
+            }
 
         }
     }
