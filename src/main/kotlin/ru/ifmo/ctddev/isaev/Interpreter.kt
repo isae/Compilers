@@ -83,7 +83,7 @@ fun interpret(node: AST, ctx: MutableMap<String, Int>, funCtx: MutableMap<String
             var last = 0
             interpretStatements(node.init, ctx, funCtx)
             while (interpret(node.expr, ctx, funCtx) != 0) {
-                last = interpretStatements(node.code, ctx, funCtx)
+                last = interpretStatements(node.loop, ctx, funCtx)
                 interpretStatements(node.increment, ctx, funCtx)
             }
             return last

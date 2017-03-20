@@ -50,7 +50,7 @@ sealed class AST {
     class Assignment(val variable: Variable, val toAssign: AST) : AST()
     class WhileLoop(val expr: AST, val loop: List<AST>) : AST()
     class UnaryMinus(val arg: AST) : AST()
-    class ForLoop(val init: List<AST>, val expr: AST, val increment: List<AST>, val code: List<AST>) : AST()
+    class ForLoop(val init: List<AST>, val expr: AST, val increment: List<AST>, val loop: List<AST>) : AST()
     class RepeatLoop(val expr: AST, val loop: List<AST>) : AST()
 }
 

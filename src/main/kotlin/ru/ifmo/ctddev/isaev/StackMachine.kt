@@ -1,5 +1,10 @@
 package ru.ifmo.ctddev.isaev
 
+import java.math.BigInteger
+import java.util.*
+import kotlin.collections.HashMap
+
+
 sealed class StackOp {
     class Read : StackOp() {
         override fun toString(): String {
@@ -43,11 +48,37 @@ sealed class StackOp {
         }
     }
 
-    class Jump(val pos: Int) : StackOp() {
+    class Label(val label: String) : StackOp() {
+        constructor() : this(getRandomLabel())
+
         override fun toString(): String {
-            return "JUMP $pos"
+            return "LABEL $label"
         }
     }
+
+    class Jump(val label: String) : StackOp() {
+        override fun toString(): String {
+            return "JUMP $label"
+        }
+    }
+
+    class Jif(val label: String) : StackOp() {
+        override fun toString(): String {
+            return "JIF $label"
+        }
+    }
+
+    class Comm(val comment: String) : StackOp() {
+        override fun toString(): String {
+            return "COMM $comment"
+        }
+    }
+}
+
+val random = Random()
+
+fun getRandomLabel(): String {
+    return BigInteger(20, random).toString(32)
 }
 
 fun compile(node: AST): List<StackOp> {
@@ -101,33 +132,59 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             if (node.elifs.isNotEmpty()) {
                 TODO("elif statements")
             }
+            stack += StackOp.Comm("If...")
             compile(node.expr, stack)
-            val ifTrue = compile(node.ifTrue)
-            val ifTrueSize = ifTrue.size + 1 // +1 for jump  
-            stack += StackOp.Jump(ifTrueSize)
-            stack += ifTrue
+            val label = getRandomLabel()
+            stack += StackOp.Jif(label)
+            stack += StackOp.Comm("Then...")
+            compile(node.ifTrue, stack)
+            stack += StackOp.Label(label)
+            stack += StackOp.Comm("Else...")
             stack += compile(node.ifFalse)
+            stack += StackOp.Comm("EndIf")
         }
         is AST.Assignment -> {
             compile(node.toAssign, stack)
             stack += StackOp.St(node.variable.name)
         }
         is AST.WhileLoop -> {
-            val expr = compile(node.expr)
-            val loop = compile(node.loop)
-            val frontJumpPos = loop.size + 3 // +3 for front and back jump (2 ops)   
-            stack += expr
-            stack += StackOp.Jump(frontJumpPos)
-            stack += loop
-            stack += StackOp.Push(0)
-            stack += StackOp.Jump(-(expr.size + loop.size + 2))
+            val startLabel = getRandomLabel()
+            val endLabel = getRandomLabel()
+            stack += StackOp.Label(startLabel)
+            stack += StackOp.Comm("While...")
+            compile(node.expr, stack)
+            stack += StackOp.Jif(endLabel)
+            stack += StackOp.Comm("Do...")
+            compile(node.loop, stack)
+            stack += StackOp.Comm("EndWhile")
+            stack += StackOp.Jump(startLabel)
+            stack += StackOp.Label(endLabel)
         }
-        is AST.ForLoop -> TODO("For loops")
+        is AST.ForLoop -> {
+            compile(node.init, stack)
+            val startLabel = getRandomLabel()
+            val endLabel = getRandomLabel()
+            stack += StackOp.Label(startLabel)
+            stack += StackOp.Comm("For...")
+            compile(node.expr, stack)
+            stack += StackOp.Jif(endLabel)
+            stack += StackOp.Comm("Do...")
+            compile(node.loop, stack)
+            stack += StackOp.Comm("Increment...")
+            compile(node.increment, stack)
+            stack += StackOp.Comm("EndFor")
+            stack += StackOp.Jump(startLabel)
+            stack += StackOp.Label(endLabel)
+        }
         is AST.RepeatLoop -> {
-            val pos = stack.size
-            node.loop.forEach { compile(it, stack) }
+            val startLabel = getRandomLabel()
+            stack += StackOp.Label(startLabel)
+            stack += StackOp.Comm("Repeat...")
+            compile(node.loop, stack)
+            stack += StackOp.Comm("Until...")
             compile(node.expr, stack) // we have zero if condition is unsuccessful
-            stack += StackOp.Jump(pos - stack.size)
+            stack += StackOp.Comm("EndRepeat")
+            stack += StackOp.Jif(startLabel)
         }
     }
 }
@@ -145,7 +202,15 @@ fun MutableList<Int>.pop(): Int {
 fun runStackMachine(operations: List<StackOp>) {
     val s = ArrayList<Int>()
     val mem = HashMap<String, Int>()
-
+    val labels = HashMap<String, Int>()
+    operations.forEachIndexed { i, op ->
+        if (op is StackOp.Label) {
+            if (labels[op.label] != null) {
+                throw IllegalStateException("Duplicate label ${op.label}")
+            }
+            labels[op.label] = i
+        }
+    }
     var ip = 0
     while (ip < operations.size) {
         val it = operations[ip]
@@ -153,6 +218,9 @@ fun runStackMachine(operations: List<StackOp>) {
             is StackOp.Read -> s.push(readLine()!!.toInt())
             is StackOp.Write -> println(s.pop())
             is StackOp.Nop -> {
+            }
+            is StackOp.Comm -> {
+                println(it.comment)
             }
             is StackOp.Push -> s.push(it.arg)
             is StackOp.Ld -> {
@@ -165,11 +233,14 @@ fun runStackMachine(operations: List<StackOp>) {
                 val left = s.pop()
                 s.push(apply(left, right, it.op))
             }
-            is StackOp.Jump -> {
+            is StackOp.Jif -> {
                 val condition = s.pop()
                 if (condition == 0) {
-                    ip += it.pos - 1
+                    ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
                 }
+            }
+            is StackOp.Jump -> {
+                ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
             }
         }
         ++ip

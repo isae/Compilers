@@ -52,7 +52,7 @@ expr
     :    atom
          |   ('+'|'-') expr
          |   expr ( '*'| '/'| '%') expr
-         |   expr ( '+'|'-') expr
+         |   expr ( '+'|'-')  expr
          |   expr ( '<'|'<='|'>'|'>=') expr
          |   expr ( '=='|'!=') expr
          |   expr '&' expr
