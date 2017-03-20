@@ -49,7 +49,6 @@ sealed class StackOp {
     }
 
     class Label(val label: String) : StackOp() {
-        constructor() : this(getRandomLabel())
 
         override fun toString(): String {
             return "LABEL $label"
@@ -70,7 +69,25 @@ sealed class StackOp {
 
     class Comm(val comment: String) : StackOp() {
         override fun toString(): String {
-            return "COMM $comment"
+            return "COMM \"$comment\""
+        }
+    }
+
+    class Call(val funName: String, val argsSize: Int) : StackOp() {
+        override fun toString(): String {
+            return "CALL $funName $argsSize"
+        }
+    }
+
+    class Enter(val argNames: List<String>) : StackOp() {
+        override fun toString(): String {
+            return "ENTER $argNames"
+        }
+    }
+
+    class Ret : StackOp() {
+        override fun toString(): String {
+            return "RET"
         }
     }
 }
@@ -78,7 +95,7 @@ sealed class StackOp {
 val random = Random()
 
 fun getRandomLabel(): String {
-    return BigInteger(20, random).toString(32)
+    return "_${BigInteger(20, random).toString(32)}"
 }
 
 fun compile(node: AST): List<StackOp> {
@@ -123,11 +140,26 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
                     compile(node.args[0], stack)
                     stack += StackOp.Write()
                 }
-                else -> TODO("Function calls")
+                else -> {
+                    node.args.reversed().forEach { compile(it, stack) }
+                    stack += StackOp.Comm("Call ${node.functionName}")
+                    stack += StackOp.Call(node.functionName, node.args.size)
+                }
             }
         }
-        is AST.FunctionDef -> TODO("Function definitions")
-        is AST.Program -> node.statements.forEach { compile(it, stack) }
+        is AST.FunctionDef -> {
+            stack += StackOp.Comm("Function '${node.functionName}' definition ...")
+            stack += StackOp.Label("_${node.functionName}")
+            stack += StackOp.Enter(node.argNames)
+            node.argNames.reversed().forEach { stack += StackOp.St(it) }
+            stack += StackOp.Comm("Function '${node.functionName}' body ...")
+            compile(node.body, stack)
+            stack += StackOp.Ret()
+        }
+        is AST.Program -> {
+            compile(node.functions, stack)
+            compile(node.statements, stack)
+        }
         is AST.Conditional -> {
             if (node.elifs.isNotEmpty()) {
                 TODO("elif statements")
@@ -189,19 +221,24 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
     }
 }
 
-fun MutableList<Int>.push(arg: Int) {
+fun <T> MutableList<T>.push(arg: T) {
     this += arg
 }
 
-fun MutableList<Int>.pop(): Int {
+fun <T> MutableList<T>.pop(): T {
     val res = this.last()
     removeAt(this.size - 1)
     return res
 }
 
+data class StackFrame(val localVariables: HashMap<String, Int> = HashMap())
+
 fun runStackMachine(operations: List<StackOp>) {
+    val callStack = ArrayList<StackFrame>()
+    val mem = { -> callStack.last().localVariables }
+    callStack.push(StackFrame())
+
     val s = ArrayList<Int>()
-    val mem = HashMap<String, Int>()
     val labels = HashMap<String, Int>()
     operations.forEachIndexed { i, op ->
         if (op is StackOp.Label) {
@@ -220,14 +257,14 @@ fun runStackMachine(operations: List<StackOp>) {
             is StackOp.Nop -> {
             }
             is StackOp.Comm -> {
-                println(it.comment)
+                //println(it.comment)
             }
             is StackOp.Push -> s.push(it.arg)
             is StackOp.Ld -> {
-                val value = mem[it.arg] ?: throw IllegalStateException("No such variable $it.arg")
+                val value = mem()[it.arg] ?: throw IllegalStateException("No such variable $it.arg")
                 s.push(value)
             }
-            is StackOp.St -> mem[it.arg] = s.pop()
+            is StackOp.St -> mem()[it.arg] = s.pop()
             is StackOp.Binop -> {
                 val right = s.pop()
                 val left = s.pop()
@@ -241,6 +278,10 @@ fun runStackMachine(operations: List<StackOp>) {
             }
             is StackOp.Jump -> {
                 ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
+            }
+            is StackOp.Call -> {
+                s.push(ip) //pushing return address
+                TODO("Function call")
             }
         }
         ++ip
