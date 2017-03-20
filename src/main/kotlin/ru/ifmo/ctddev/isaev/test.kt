@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
         println("Input: $input")
         println("Output: $output")
         val program = buildAST(programText)
-        runInterpreter(program)
+        runStackMachine(program)
     }
 }
 

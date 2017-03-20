@@ -68,7 +68,8 @@ private fun compile(nodes: List<AST>, stack: MutableList<StackOp>) {
 
 private fun compile(node: AST, stack: MutableList<StackOp>) {
     when (node) {
-        is AST.Skip -> stack += StackOp.Nop()
+        is AST.Skip -> {
+        }
         is AST.Const -> stack += StackOp.Push(node.number)
         is AST.Variable -> stack += StackOp.Ld(node.name)
         is AST.UnaryMinus -> { // -a == 0-a
@@ -112,14 +113,14 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             stack += StackOp.St(node.variable.name)
         }
         is AST.WhileLoop -> {
-            val backJumpPos = stack.size
-            compile(node.expr, stack)
+            val expr = compile(node.expr)
             val loop = compile(node.loop)
             val frontJumpPos = loop.size + 3 // +3 for front and back jump (2 ops)   
+            stack += expr
             stack += StackOp.Jump(frontJumpPos)
             stack += loop
             stack += StackOp.Push(0)
-            stack += StackOp.Jump(backJumpPos - stack.size)
+            stack += StackOp.Jump(-(expr.size + loop.size + 2))
         }
         is AST.ForLoop -> TODO("For loops")
         is AST.RepeatLoop -> {
