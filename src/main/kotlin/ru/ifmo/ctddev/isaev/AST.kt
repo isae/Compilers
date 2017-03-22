@@ -11,8 +11,9 @@ fun apply(l: Int, r: Int, op: String): Int {
         "*" -> l * r
         "/" -> l / r
         "%" -> l % r
-        "&" -> l.and(r)
-        "|" -> l.or(r)
+        "&" -> if (l != 0 && r != 0) 1 else 0
+        "|" -> if (l == 0 && r == 0) 0 else 1
+        "!!" -> if ((l == 0) == (r == 0)) 0 else 1
         "==" -> if (l == r) 1 else 0
         "!=" -> if (l != r) 1 else 0
         ">" -> if (l > r) 1 else 0
@@ -33,6 +34,7 @@ sealed class AST {
         class Mul(l: AST, r: AST) : Binary(l, r, "*")
         class And(l: AST, r: AST) : Binary(l, r, "&")
         class Or(l: AST, r: AST) : Binary(l, r, "|")
+        class Xor(l: AST, r: AST) : Binary(l, r, "|")
         class Div(l: AST, r: AST) : Binary(l, r, "/")
         class Mod(l: AST, r: AST) : Binary(l, r, "%")
         class Eq(l: AST, r: AST) : Binary(l, r, "==")
