@@ -8,16 +8,14 @@ import java.io.File
 
 
 fun main(args: Array<String>) {
-    while (true) {
-        val testName = readLine()
-        val programText = File("./compiler-tests/core/test0${testName}.expr").readText()
-        val input = File("./compiler-tests/core/test0${testName}.input").readText()
-        val output = File("./compiler-tests/core/orig/test0${testName}.log").readText()
-        println(programText)
-        println("Input: $input")
-        println("Output: $output")
-        val program = buildAST(programText)
-        runStackMachine(program)
+    val option = args[0]
+    val fileName = args[1]
+    val programText = File(fileName).readText()
+    val program = buildAST(programText)
+    when (option) {
+        "-i" -> runInterpreter(program)
+        "-s" -> runStackMachine(program)
+        "-o" -> throw IllegalArgumentException("Compilation to ASM is not supported yet")
     }
 }
 
@@ -29,11 +27,11 @@ fun buildAST(program: String): AST {
     return ASTBuilder().visitProgram(programTree)
 }
 
-private fun runInterpreter(program: AST) {
+fun runInterpreter(program: AST) {
     interpret(program)
 }
 
-private fun runStackMachine(program: AST) {
+fun runStackMachine(program: AST) {
     val compiledSTM = compile(program)
     compiledSTM.forEachIndexed { i, op -> println("$i: $op") }
     runStackMachine(compiledSTM)
