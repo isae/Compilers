@@ -33,6 +33,6 @@ fun runInterpreter(program: AST) {
 
 fun runStackMachine(program: AST) {
     val compiledSTM = compile(program)
-    compiledSTM.forEachIndexed { i, op -> println("$i: $op") }
+    //compiledSTM.forEachIndexed { i, op -> println("$i: $op") }
     runStackMachine(compiledSTM)
 }
