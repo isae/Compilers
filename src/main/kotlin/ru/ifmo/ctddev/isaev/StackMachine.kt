@@ -161,19 +161,29 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             stack += StackOp.Label("main")
             compile(node.statements, stack)
         }
-        is AST.Conditional -> {
-            if (node.elifs.isNotEmpty()) {
-                TODO("elif statements")
-            }
+        is AST.Conditional -> { //TODO: else is not mandatory
+            val elifLabels = node.elifs.map { getRandomLabel() }
             stack += StackOp.Comm("If...")
             compile(node.expr, stack)
-            val label = getRandomLabel()
-            stack += StackOp.Jif(label)
+            val elseLabel = getRandomLabel()
+            val afterIf = getRandomLabel()
+            stack += if (elifLabels.isEmpty()) StackOp.Jif(elseLabel) else StackOp.Jif(elifLabels[0])
             stack += StackOp.Comm("Then...")
             compile(node.ifTrue, stack)
-            stack += StackOp.Label(label)
+            stack += StackOp.Jump(afterIf)
+            node.elifs.forEachIndexed { i, (expr, code) ->
+                stack += StackOp.Label(elifLabels[i])
+                stack += StackOp.Comm("Else If...")
+                compile(expr, stack)
+                stack += if (i == elifLabels.size - 1) StackOp.Jif(elseLabel) else StackOp.Jif(elifLabels[i + 1])
+                stack += StackOp.Comm("Then...")
+                compile(code, stack)
+                stack += StackOp.Jump(afterIf)
+            }
+            stack += StackOp.Label(elseLabel)
             stack += StackOp.Comm("Else...")
             stack += compile(node.ifFalse)
+            stack += StackOp.Label(afterIf)
             stack += StackOp.Comm("EndIf")
         }
         is AST.Assignment -> {
