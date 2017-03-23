@@ -19,6 +19,23 @@ fun main(args: Array<String>) {
     }
 }
 
+var read_count: Int = 0
+var write_count: Int = 0
+
+fun printPrefix(): String {
+    return if (write_count > 0) "" else ("> ".repeat(read_count))
+}
+
+fun builtInRead(): Int {
+    ++read_count
+    return readLine()!!.toInt()
+}
+
+fun builtInWrite(arg: Int): Unit {
+    println(printPrefix() + arg)
+    ++write_count
+}
+
 fun buildAST(program: String): AST {
     val lexer = LangLexer(ANTLRInputStream(program))
     val tokens = CommonTokenStream(lexer)

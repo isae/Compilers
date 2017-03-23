@@ -31,9 +31,9 @@ fun interpret(node: AST, ctx: MutableMap<String, Int>, funCtx: MutableMap<String
                 }
             }
             return when (node.functionName) {
-                "read" -> readLine()!!.toInt()
+                "read" -> builtInRead()
                 "write" -> {
-                    callArgs.forEach(::println)
+                    callArgs.forEach(::builtInWrite)
                     return 0
                 }
                 else -> {

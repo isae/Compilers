@@ -261,8 +261,8 @@ fun runStackMachine(operations: List<StackOp>) {
     while (ip < operations.size) {
         val it = operations[ip]
         when (it) {
-            is StackOp.Read -> push(readLine()!!.toInt())
-            is StackOp.Write -> println(pop())
+            is StackOp.Read -> push(builtInRead())
+            is StackOp.Write -> builtInWrite(pop())
             is StackOp.Nop -> {
             }
             is StackOp.Label -> {
