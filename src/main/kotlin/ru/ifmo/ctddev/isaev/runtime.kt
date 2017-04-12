@@ -15,7 +15,7 @@ fun main(args: Array<String>) {
     when (option) {
         "-i" -> runInterpreter(program)
         "-s" -> runStackMachine(program)
-        "-o" -> throw IllegalArgumentException("Compilation to ASM is not supported yet")
+        "-o" -> compileToASM(program)
     }
 }
 
@@ -50,6 +50,13 @@ fun runInterpreter(program: AST) {
 
 fun runStackMachine(program: AST) {
     val compiledSTM = compile(program)
-    //compiledSTM.forEachIndexed { i, op -> println("$i: $op") }
+    compiledSTM.forEachIndexed { i, op -> println("$i: $op") }
+    runStackMachine(compiledSTM)
+}
+
+fun compileToASM(program: AST) {
+    val compiledSTM = compile(program)
+    val asmCode = compile(compiledSTM)
+    asmCode.forEach { println("$it") }
     runStackMachine(compiledSTM)
 }
