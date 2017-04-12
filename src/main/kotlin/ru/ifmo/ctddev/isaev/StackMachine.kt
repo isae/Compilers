@@ -3,6 +3,7 @@ package ru.ifmo.ctddev.isaev
 import java.math.BigInteger
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 
 
 sealed class StackOp {
@@ -79,9 +80,9 @@ sealed class StackOp {
         }
     }
 
-    class Enter(val argNames: List<String>) : StackOp() {
+    class Enter(val argNames: List<String>, val localVariables: Set<String>) : StackOp() {
         override fun toString(): String {
-            return "ENTER $argNames"
+            return "ENTER $argNames $localVariables"
         }
     }
 
@@ -150,7 +151,9 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
         is AST.FunctionDef -> {
             stack += StackOp.Comm("Function '${node.functionName}' definition ...")
             stack += StackOp.Label("_${node.functionName}")
-            stack += StackOp.Enter(node.argNames)
+            val localVariables = searchLocalVariables(node.body)
+            localVariables.removeAll(node.argNames)
+            stack += StackOp.Enter(node.argNames, localVariables)
             //node.argNames.reversed().forEach { stack += StackOp.St(it) }
             stack += StackOp.Comm("Function '${node.functionName}' body ...")
             compile(node.body, stack)
@@ -228,6 +231,62 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             compile(node.expr, stack) // we have zero if condition is unsuccessful
             stack += StackOp.Comm("EndRepeat")
             stack += StackOp.Jif(startLabel)
+        }
+    }
+}
+
+fun searchLocalVariables(body: List<AST>): MutableSet<String> {
+    val results = HashSet<String>()
+    body.forEach { searchLocalVariables(it, results) }
+    return results
+}
+
+fun searchLocalVariables(node: AST, results: MutableSet<String>): Unit {
+    when (node) {
+        is AST.Skip -> {
+        }
+        is AST.Const -> {
+        }
+        is AST.Variable -> {
+            results += node.name
+        }
+        is AST.UnaryMinus -> {
+            searchLocalVariables(node.arg, results)
+        }
+        is AST.Binary -> {
+            searchLocalVariables(node.left, results)
+            searchLocalVariables(node.right, results)
+        }
+        is AST.FunctionCall -> {
+            node.args.forEach { searchLocalVariables(it, results) }
+        }
+        is AST.FunctionDef -> {}
+        is AST.Program -> {}
+        is AST.Conditional -> {
+            searchLocalVariables(node.expr, results)
+            node.ifTrue.forEach { searchLocalVariables(it, results) }
+            node.ifFalse.forEach { searchLocalVariables(it, results) }
+            node.elifs.forEach { (expr, code) ->
+                searchLocalVariables(expr, results)
+                code.forEach { searchLocalVariables(it, results) }
+            }
+        }
+        is AST.Assignment -> {
+            results += node.variable.name
+        }
+        is AST.WhileLoop -> {
+            searchLocalVariables(node.expr, results)
+            node.loop.forEach { searchLocalVariables(it, results) }
+        }
+        is AST.ForLoop -> {
+            searchLocalVariables(node.expr, results)
+            node.init.forEach { searchLocalVariables(it, results) }
+            node.increment.forEach { searchLocalVariables(it, results) }
+            node.loop.forEach { searchLocalVariables(it, results) }
+        }
+        is AST.RepeatLoop -> {
+            searchLocalVariables(node.expr, results)
+            node.loop.forEach { searchLocalVariables(it, results) }
         }
     }
 }
