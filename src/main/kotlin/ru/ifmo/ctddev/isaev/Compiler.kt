@@ -35,8 +35,8 @@ format_out: db "%d", 10, 0
 """
 
 val suffix = """
-mov eax, 0
-ret
+    mov eax, 0
+    ret
 """
 
 sealed class AsmOp {
@@ -98,8 +98,8 @@ fun compile(nodes: List<StackOp>): List<String> {
     ops += rodata
     val localVars = nodes.filter { it is StackOp.St }.map { (it as StackOp.St).arg }.distinct()
     ops += "SECTION .data"
-    ops += "int_read: dd 0"
-    localVars.forEach { ops += "$it: dd 0" }
+    ops /= "int_read: dd 0"
+    localVars.forEach { ops /= "$it: dd 0" }
     ops += prefix
     compile(nodes, ops)
     ops += suffix
@@ -114,20 +114,20 @@ private fun compile(nodes: List<StackOp>, ops: MutableList<String>) {
 private fun compile(node: StackOp, ops: MutableList<String>) {
     when (node) {
         is StackOp.Read -> {
-            ops += "clib_prolog 16"
-            ops += "mov dword [esp+4], int_read"
-            ops += "mov dword [esp], format_in"
-            ops += "call _scanf"
-            ops += "clib_epilog 16"
-            ops += "push dword [int_read]"
+            ops /= "clib_prolog 16"
+            ops /= "mov dword [esp+4], int_read"
+            ops /= "mov dword [esp], format_in"
+            ops /= "call _scanf"
+            ops /= "clib_epilog 16"
+            ops /= "push dword [int_read]"
         }
         is StackOp.Write -> { // arg is already on stack
-            ops += "pop eax"
-            ops += "clib_prolog 16"
-            ops += "mov dword [esp+4], eax"
-            ops += "mov dword [esp], format_out"
-            ops += "call _printf"
-            ops += "clib_epilog 16"
+            ops /= "pop eax"
+            ops /= "clib_prolog 16"
+            ops /= "mov dword [esp+4], eax"
+            ops /= "mov dword [esp], format_out"
+            ops /= "call _printf"
+            ops /= "clib_epilog 16"
         }
         is StackOp.Nop -> {
         }
@@ -139,11 +139,11 @@ private fun compile(node: StackOp, ops: MutableList<String>) {
         is StackOp.Push -> {
         }
         is StackOp.Ld -> {
-            ops += "push dword [${node.arg}]"
+            ops /= "push dword [${node.arg}]"
         }
         is StackOp.St -> {
-            ops += "pop eax"
-            ops += "mov [${node.arg}], eax"
+            ops /= "pop eax"
+            ops /= "mov [${node.arg}], eax"
         }
         is StackOp.Binop -> {
         }
@@ -158,4 +158,8 @@ private fun compile(node: StackOp, ops: MutableList<String>) {
         is StackOp.Ret -> {
         }
     }
+}
+
+private operator fun MutableList<String>.divAssign(e: String) {
+    this.add("\t$e")
 }
