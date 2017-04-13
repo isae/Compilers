@@ -1,9 +1,3 @@
-; File: hello.asm
-; Build: nasm -f macho hello.asm && gcc -arch i386 -o hello hello.o
-
-; aligns esp to 16 bytes in preparation for calling a C library function
-; arg is number of bytes to pad for function arguments, this should be a multiple of 16
-; unless you are using push/pop to load args
 %macro clib_prolog 1
     mov ebx, esp        ; remember current esp
     and esp, 0xFFFFFFF0 ; align to next 16 byte boundary (could be zero offset!)
@@ -19,16 +13,21 @@
     mov esp, ebx        ; restore
 %endmacro
 
+extern _printf ; could also use _puts...
+extern _scanf ; could also use _puts...
+extern _gets
 
 SECTION .rodata
+format_in: db "%d", 0x00
+format_out: db "%d", 0x0a, 0x00 ; newline, nul terminator
 hello.msg db 'Hello, World!',0x0a,0x00
 
 SECTION .data
 a: dd 5
+b: dd 5
 
 SECTION .text
 
-extern _printf ; could also use _puts...
 GLOBAL _main
 
 _main:

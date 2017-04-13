@@ -3,44 +3,41 @@ package ru.ifmo.ctddev.isaev
 import java.util.*
 
 val macros = """
-; aligns esp to 16 bytes in preparation for calling a C library function
-; arg is number of bytes to pad for function arguments, this should be a multiple of 16
-; unless you are using push/pop to load args
 %macro clib_prolog 1
-mov ebx, esp        ; remember current esp
-and esp, 0xFFFFFFF0 ; align to next 16 byte boundary (could be zero offset!)
-sub esp, 12         ; skip ahead 12 so we can store original esp
-push ebx            ; store esp (16 bytes aligned again)
-sub esp, %1         ; pad for arguments (make conditional?)
+mov ebx, esp 
+and esp, 0xFFFFFFF0
+sub esp, 12    
+push ebx         
+sub esp, %1
 %endmacro
 
-; arg must match most recent call to clib_prolog
 %macro clib_epilog 1
-add esp, %1         ; remove arg padding
-pop ebx             ; get original esp
-mov esp, ebx        ; restore
+add esp, %1
+pop ebx        
+mov esp, ebx
 %endmacro
     """
 
 val externs = """
-extern _printf ; could also use _puts...
-extern _scanf ; could also use _puts...
+extern _printf
+extern _scanf
 extern _gets
 """
 val prefix = """
+SECTION .text
 GLOBAL _main
     """
 
 val rodata = """
 SECTION .rodata
 format_in: db "%d", 0
-format_out: db "%d", 13, 0 ; newline, nul terminator
+format_out: db "%d", 10, 0
 """
 
 val suffix = """
-mov eax, 0          ; set return code
+mov eax, 0
 ret
-    """
+"""
 
 sealed class AsmOp {
     class Nop : AsmOp() {
@@ -101,6 +98,7 @@ fun compile(nodes: List<StackOp>): List<String> {
     ops += rodata
     val localVars = nodes.filter { it is StackOp.St }.map { (it as StackOp.St).arg }.distinct()
     ops += "SECTION .data"
+    ops += "int_read: dd 0"
     localVars.forEach { ops += "$it: dd 0" }
     ops += prefix
     compile(nodes, ops)
@@ -116,8 +114,15 @@ private fun compile(nodes: List<StackOp>, ops: MutableList<String>) {
 private fun compile(node: StackOp, ops: MutableList<String>) {
     when (node) {
         is StackOp.Read -> {
+            ops += "push int_read" //TODO: read without using intermediate variables
+            ops += "push format_in"
+            ops += "call _scanf"
+            ops += "add esp, 4" // left read value on stack
         }
-        is StackOp.Write -> {
+        is StackOp.Write -> { // arg is already on stack
+            ops += "push format_out"
+            ops += "call _printf"
+            ops += "add esp, 8" // popped arg too
         }
         is StackOp.Nop -> {
         }
@@ -131,6 +136,8 @@ private fun compile(node: StackOp, ops: MutableList<String>) {
         is StackOp.Ld -> {
         }
         is StackOp.St -> {
+            ops += "pop eax"
+            ops += "mov [${node.arg}], eax"
         }
         is StackOp.Binop -> {
         }
