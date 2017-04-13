@@ -13,6 +13,11 @@ fun main(args: Array<String>) {
         println("Input: $input")
         println("Output: $output")
         val program = buildAST(programText)
-        runStackMachine(program)
+        val compiledSTM = compile(program)
+        println("Byte code:")
+        compiledSTM.forEachIndexed { i, op -> println("$i: $op") }
+        println("ASM code:")
+        val asmCode = compile(compiledSTM)
+        asmCode.forEach(::println)
     }
 }

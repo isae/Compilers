@@ -57,6 +57,5 @@ fun runStackMachine(program: AST) {
 fun compileToASM(program: AST) {
     val compiledSTM = compile(program)
     val asmCode = compile(compiledSTM)
-    asmCode.forEach { println("$it") }
-    runStackMachine(compiledSTM)
+    asmCode.forEach(::println)
 }

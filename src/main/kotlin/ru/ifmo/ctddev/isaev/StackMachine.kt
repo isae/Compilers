@@ -161,7 +161,7 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
         }
         is AST.Program -> {
             compile(node.functions, stack)
-            stack += StackOp.Label("main")
+            stack += StackOp.Label("_main")
             compile(node.statements, stack)
         }
         is AST.Conditional -> { //TODO: else is not mandatory
@@ -292,7 +292,7 @@ fun searchLocalVariables(node: AST, results: MutableSet<String>): Unit {
 }
 
 fun runStackMachine(operations: List<StackOp>) {
-    var funPrefix = "main"
+    var funPrefix = "_main"
     val mem = HashMap<String, Int>()
 
     val s = ArrayList<Int>()
@@ -316,7 +316,7 @@ fun runStackMachine(operations: List<StackOp>) {
             labels[op.label] = i
         }
     }
-    var ip = labels["main"] ?: throw IllegalStateException("No such label: main")
+    var ip = labels["_main"] ?: throw IllegalStateException("No such label: main")
     while (ip < operations.size) {
         val it = operations[ip]
         when (it) {
