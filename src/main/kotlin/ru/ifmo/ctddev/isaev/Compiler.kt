@@ -114,15 +114,20 @@ private fun compile(nodes: List<StackOp>, ops: MutableList<String>) {
 private fun compile(node: StackOp, ops: MutableList<String>) {
     when (node) {
         is StackOp.Read -> {
-            ops += "push int_read" //TODO: read without using intermediate variables
-            ops += "push format_in"
+            ops += "clib_prolog 16"
+            ops += "mov dword [esp+4], int_read"
+            ops += "mov dword [esp], format_in"
             ops += "call _scanf"
-            ops += "add esp, 4" // left read value on stack
+            ops += "clib_epilog 16"
+            ops += "push dword [int_read]"
         }
         is StackOp.Write -> { // arg is already on stack
-            ops += "push format_out"
+            ops += "pop eax"
+            ops += "clib_prolog 16"
+            ops += "mov dword [esp+4], eax"
+            ops += "mov dword [esp], format_out"
             ops += "call _printf"
-            ops += "add esp, 8" // popped arg too
+            ops += "clib_epilog 16"
         }
         is StackOp.Nop -> {
         }
@@ -134,6 +139,7 @@ private fun compile(node: StackOp, ops: MutableList<String>) {
         is StackOp.Push -> {
         }
         is StackOp.Ld -> {
+            ops += "push dword [${node.arg}]"
         }
         is StackOp.St -> {
             ops += "pop eax"

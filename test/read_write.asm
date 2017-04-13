@@ -30,27 +30,18 @@ SECTION .text
 GLOBAL _main
     
 _main:
-    push ebp
-    mov ebp, esp
-    push ebx
-    
     clib_prolog 16
     mov dword [esp+4], x
     mov dword [esp], format_in
     call _scanf
     clib_epilog 16
-    
+    push dword [x]
+    pop eax
     clib_prolog 16
-    mov eax, [x]
     mov dword [esp+4], eax
     mov dword [esp], format_out
     call _printf
     clib_epilog 16
-
-    ; tear down stack frame
-    pop ebx
-    mov esp, ebp
-    pop ebp
 
 mov eax, 0
 ret
