@@ -154,6 +154,32 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                     ops /= "mul edx"
                     ops /= "push eax"
                 }
+                "+" -> {
+                    ops /= "pop eax"
+                    ops /= "pop edx"
+                    ops /= "add eax, edx"
+                    ops /= "push eax"
+                }
+                "-" -> {
+                    ops /= "pop edx"
+                    ops /= "pop eax"
+                    ops /= "sub eax, edx"
+                    ops /= "push eax"
+                }
+                "/" -> {
+                    ops /= "xor edx, edx"
+                    ops /= "pop ecx"
+                    ops /= "pop eax"
+                    ops /= "div ecx"
+                    ops /= "push eax"
+                }
+                "%" -> {
+                    ops /= "xor edx, edx"
+                    ops /= "pop ecx"
+                    ops /= "pop eax"
+                    ops /= "div ecx"
+                    ops /= "push edx"
+                }
             }
         }
         is StackOp.Jif -> {
