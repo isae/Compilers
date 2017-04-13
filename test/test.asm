@@ -1,3 +1,4 @@
+
 %macro clib_prolog 1
 mov ebx, esp 
 and esp, 0xFFFFFFF0
@@ -25,6 +26,8 @@ format_out: db "%d", 10, 0
 SECTION .data
 	int_read: dd 0
 	x: dd 0
+	y: dd 0
+	z: dd 0
 
 SECTION .text
 GLOBAL _main
@@ -38,7 +41,28 @@ _main:
 	push dword [int_read]
 	pop eax
 	mov [x], eax
+	clib_prolog 16
+	mov dword [esp+4], int_read
+	mov dword [esp], format_in
+	call _scanf
+	clib_epilog 16
+	push dword [int_read]
+	pop eax
+	mov [y], eax
 	push dword [x]
+	push dword [y]
+	pop eax
+	pop edx
+	mul edx
+	push eax
+	push 3
+	pop eax
+	pop edx
+	mul edx
+	push eax
+	pop eax
+	mov [z], eax
+	push dword [z]
 	pop eax
 	clib_prolog 16
 	mov dword [esp+4], eax
@@ -48,3 +72,4 @@ _main:
 
     mov eax, 0
     ret
+

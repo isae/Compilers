@@ -111,8 +111,8 @@ private fun compile(nodes: List<StackOp>, ops: MutableList<String>) {
 }
 
 
-private fun compile(node: StackOp, ops: MutableList<String>) {
-    when (node) {
+private fun compile(op: StackOp, ops: MutableList<String>) {
+    when (op) {
         is StackOp.Read -> {
             ops /= "clib_prolog 16"
             ops /= "mov dword [esp+4], int_read"
@@ -132,20 +132,29 @@ private fun compile(node: StackOp, ops: MutableList<String>) {
         is StackOp.Nop -> {
         }
         is StackOp.Label -> {
-            ops += "${node.label}:"
+            ops += "${op.label}:"
         }
         is StackOp.Comm -> {
         }
         is StackOp.Push -> {
+            ops /= "push ${op.arg}"
         }
         is StackOp.Ld -> {
-            ops /= "push dword [${node.arg}]"
+            ops /= "push dword [${op.arg}]"
         }
         is StackOp.St -> {
             ops /= "pop eax"
-            ops /= "mov [${node.arg}], eax"
+            ops /= "mov [${op.arg}], eax"
         }
         is StackOp.Binop -> {
+            when (op.op) {
+                "*" -> {
+                    ops /= "pop eax"
+                    ops /= "pop edx"
+                    ops /= "mul edx"
+                    ops /= "push eax"
+                }
+            }
         }
         is StackOp.Jif -> {
         }

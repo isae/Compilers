@@ -1,6 +1,7 @@
 package ru.ifmo.ctddev.isaev
 
 import java.io.File
+import java.io.PrintWriter
 
 
 fun main(args: Array<String>) {
@@ -19,5 +20,9 @@ fun main(args: Array<String>) {
         println("ASM code:")
         val asmCode = compile(compiledSTM)
         asmCode.forEach(::println)
+        PrintWriter("./test/test.asm").use {
+            asmCode.forEach(it::println)
+            it.close()
+        }
     }
 }
