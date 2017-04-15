@@ -239,14 +239,21 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             }
         }
         is StackOp.Jif -> {
+            ops /= "pop eax"
+            ops /= "cmp eax, 0"
+            ops /= "je ${op.label}"
         }
         is StackOp.Jump -> {
+            ops /= "jmp ${op.label}"
         }
         is StackOp.Call -> {
+            TODO("NOT SUPPORTED")
         }
         is StackOp.Enter -> {
+            TODO("NOT SUPPORTED")
         }
         is StackOp.Ret -> {
+            TODO("NOT SUPPORTED")
         }
     }
 }
