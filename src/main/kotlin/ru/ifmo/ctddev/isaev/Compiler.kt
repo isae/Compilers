@@ -217,6 +217,24 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                     ops /= "jmp $+7"
                     ops /= "push 1"
                 }
+                "==" -> {
+                    ops /= "pop eax"
+                    ops /= "pop edx"
+                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "je $+9"
+                    ops /= "push 0"
+                    ops /= "jmp $+7"
+                    ops /= "push 1"
+                }
+                "!=" -> {
+                    ops /= "pop eax"
+                    ops /= "pop edx"
+                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "jne $+9"
+                    ops /= "push 0"
+                    ops /= "jmp $+7"
+                    ops /= "push 1"
+                }
                 else -> TODO("NOT SUPPORTED: ${op.op}")
             }
         }
