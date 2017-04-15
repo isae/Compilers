@@ -121,7 +121,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             ops /= "clib_epilog 16"
             ops /= "push dword [int_read]"
         }
-        is StackOp.Write -> { // arg is already on stack
+        is StackOp.Write -> {
             ops /= "pop eax"
             ops /= "clib_prolog 16"
             ops /= "mov dword [esp+4], eax"
@@ -135,6 +135,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             ops += "${op.label}:"
         }
         is StackOp.Comm -> {
+            ops /= ";${op.comment}"
         }
         is StackOp.Push -> {
             ops /= "push ${op.arg}"
@@ -180,6 +181,43 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                     ops /= "div ecx"
                     ops /= "push edx"
                 }
+                "<" -> {
+                    ops /= "pop edx"
+                    ops /= "pop eax"
+                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "jl $+9"
+                    ops /= "push 0"
+                    ops /= "jmp $+7"
+                    ops /= "push 1"
+                }
+                "<=" -> {
+                    ops /= "pop edx"
+                    ops /= "pop eax"
+                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "jle $+9"
+                    ops /= "push 0"
+                    ops /= "jmp $+7"
+                    ops /= "push 1"
+                }
+                ">" -> {
+                    ops /= "pop eax"
+                    ops /= "pop edx"
+                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "jl $+9"
+                    ops /= "push 0"
+                    ops /= "jmp $+7"
+                    ops /= "push 1"
+                }
+                ">=" -> {
+                    ops /= "pop eax"
+                    ops /= "pop edx"
+                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "jle $+9"
+                    ops /= "push 0"
+                    ops /= "jmp $+7"
+                    ops /= "push 1"
+                }
+                else -> TODO("NOT SUPPORTED: ${op.op}")
             }
         }
         is StackOp.Jif -> {
