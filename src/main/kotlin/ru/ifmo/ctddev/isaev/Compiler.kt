@@ -241,7 +241,8 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         is StackOp.Jif -> {
             ops /= "pop eax"
             ops /= "cmp eax, 0"
-            ops /= "je ${op.label}"
+            ops /= "jne $+7"
+            ops /= "jmp ${op.label}"
         }
         is StackOp.Jump -> {
             ops /= "jmp ${op.label}"
