@@ -46,6 +46,14 @@ functionCall
 functionDef
     : 'fun' variable '(' argList ')' 'begin' codeBlock END
     ;
+    
+arrayDeclaration
+    : '{'  (expr)? (','expr)* '}'
+    ;
+
+pointerAccess    
+    : pointer ('[' expr ']')+
+    ;
   
 /* Logical operations have the lowest precedence. */
 expr
@@ -63,10 +71,13 @@ expr
          ;
         
 atom
-    :    variable | functionCall | Number | '(' expr ')';
+    :    variable | functionCall | Number | Char | String | arrayDeclaration | pointerAccess | '(' expr ')';
     
 variable: 
     Var;
+
+pointer: 
+    Pointer;
     
 // LEXER
     
@@ -89,10 +100,15 @@ END : 'end';
 ELIF : 'elif';   
 
 // Accepted characters
-fragment Letter   :    [A-Za-z_];
-fragment LetterOrDigit   :    [A-Za-z0-9_];
-Number   :    [0-9]+;
-Var      :    Letter LetterOrDigit*;
+fragment Uppercase       :    [A-Z];
+fragment Lowercase       :    [a-z];
+fragment Letter          :    Uppercase | Lowercase | '_';
+fragment LetterOrDigit   :    Letter | [0-9];
+Number                    :    [0-9]+;
+Char                      :    '\'' .+? '\'';
+String                    :    '"' .+? '"';
+Var                       :    Lowercase LetterOrDigit*;
+Pointer                   :    Uppercase LetterOrDigit*;
 
 // Whitespaces
 WS  

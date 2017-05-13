@@ -1,5 +1,9 @@
 package ru.ifmo.ctddev.isaev
 
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.io.PrintWriter
 import java.math.BigInteger
 import java.util.*
 import kotlin.collections.HashMap
@@ -260,8 +264,10 @@ fun searchLocalVariables(node: AST, results: MutableSet<String>): Unit {
         is AST.FunctionCall -> {
             node.args.forEach { searchLocalVariables(it, results) }
         }
-        is AST.FunctionDef -> {}
-        is AST.Program -> {}
+        is AST.FunctionDef -> {
+        }
+        is AST.Program -> {
+        }
         is AST.Conditional -> {
             searchLocalVariables(node.expr, results)
             node.ifTrue.forEach { searchLocalVariables(it, results) }
@@ -291,89 +297,93 @@ fun searchLocalVariables(node: AST, results: MutableSet<String>): Unit {
     }
 }
 
-fun runStackMachine(operations: List<StackOp>) {
-    var funPrefix = "_main"
-    val mem = HashMap<String, Int>()
+class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader(System.`in`)),
+                   val writer: PrintWriter = PrintWriter(OutputStreamWriter(System.out))) {
 
-    val s = ArrayList<Int>()
+    fun run(operations: List<StackOp>) {
+        var funPrefix = "_main"
+        val mem = HashMap<String, Int>()
 
-    fun pop(): Int {
-        val res = s.last()
-        s.removeAt(s.size - 1)
-        return res
-    }
+        val s = ArrayList<Int>()
 
-    fun push(arg: Int) {
-        s += arg
-    }
-
-    val labels = HashMap<String, Int>()
-    operations.forEachIndexed { i, op ->
-        if (op is StackOp.Label) {
-            if (labels[op.label] != null) {
-                throw IllegalStateException("Duplicate label ${op.label}")
-            }
-            labels[op.label] = i
+        fun pop(): Int {
+            val res = s.last()
+            s.removeAt(s.size - 1)
+            return res
         }
-    }
-    var ip = labels["_main"] ?: throw IllegalStateException("No such label: main")
-    while (ip < operations.size) {
-        val it = operations[ip]
-        when (it) {
-            is StackOp.Read -> push(builtInRead())
-            is StackOp.Write -> builtInWrite(pop())
-            is StackOp.Nop -> {
+
+        fun push(arg: Int) {
+            s += arg
+        }
+
+        val labels = HashMap<String, Int>()
+        operations.forEachIndexed { i, op ->
+            if (op is StackOp.Label) {
+                if (labels[op.label] != null) {
+                    throw IllegalStateException("Duplicate label ${op.label}")
+                }
+                labels[op.label] = i
             }
-            is StackOp.Label -> {
-            }
-            is StackOp.Comm -> {
-                //println(it.comment)
-            }
-            is StackOp.Push -> push(it.arg)
-            is StackOp.Ld -> {
-                val value = mem["$funPrefix.${it.arg}"] ?: throw IllegalStateException("No such variable $it.arg")
-                push(value)
-            }
-            is StackOp.St -> mem["$funPrefix.${it.arg}"] = pop()
-            is StackOp.Binop -> {
-                val right = pop()
-                val left = pop()
-                push(apply(left, right, it.op))
-            }
-            is StackOp.Jif -> {
-                val condition = pop()
-                if (condition == 0) {
+        }
+        var ip = labels["_main"] ?: throw IllegalStateException("No such label: main")
+        while (ip < operations.size) {
+            val it = operations[ip]
+            when (it) {
+                is StackOp.Read -> push(builtInRead(reader))
+                is StackOp.Write -> builtInWrite(pop(), writer)
+                is StackOp.Nop -> {
+                }
+                is StackOp.Label -> {
+                }
+                is StackOp.Comm -> {
+                    //println(it.comment)
+                }
+                is StackOp.Push -> push(it.arg)
+                is StackOp.Ld -> {
+                    val value = mem["$funPrefix.${it.arg}"] ?: throw IllegalStateException("No such variable $it.arg")
+                    push(value)
+                }
+                is StackOp.St -> mem["$funPrefix.${it.arg}"] = pop()
+                is StackOp.Binop -> {
+                    val right = pop()
+                    val left = pop()
+                    push(apply(left, right, it.op))
+                }
+                is StackOp.Jif -> {
+                    val condition = pop()
+                    if (condition == 0) {
+                        ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
+                    }
+                }
+                is StackOp.Jump -> {
                     ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
                 }
-            }
-            is StackOp.Jump -> {
-                ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
-            }
-            is StackOp.Call -> {
-                push(ip) //pushing return address, arguments are already on stack
-                val labelIp = labels["_${it.funName}"] ?: throw IllegalStateException("No such function '${it.funName}'")
-                ip = labelIp
-                funPrefix = "$funPrefix/${it.funName}"
-            }
-            is StackOp.Enter -> {
-                val returnAddress = pop()
-                it.argNames.forEach {
-                    mem["$funPrefix.$it"] = pop()
+                is StackOp.Call -> {
+                    push(ip) //pushing return address, arguments are already on stack
+                    val labelIp = labels["_${it.funName}"] ?: throw IllegalStateException("No such function '${it.funName}'")
+                    ip = labelIp
+                    funPrefix = "$funPrefix/${it.funName}"
                 }
-                push(returnAddress)
-            }
-            is StackOp.Ret -> {
-                mem.entries.removeIf { it.key.startsWith(funPrefix) }
-                val lastSlash = funPrefix.lastIndexOf('/')
-                if (lastSlash != -1) {
-                    funPrefix = funPrefix.substring(0, lastSlash)
+                is StackOp.Enter -> {
+                    val returnAddress = pop()
+                    it.argNames.forEach {
+                        mem["$funPrefix.$it"] = pop()
+                    }
+                    push(returnAddress)
                 }
-                val returnValue = pop()
-                val returnAddress = pop()
-                push(returnValue)
-                ip = returnAddress
+                is StackOp.Ret -> {
+                    mem.entries.removeIf { it.key.startsWith(funPrefix) }
+                    val lastSlash = funPrefix.lastIndexOf('/')
+                    if (lastSlash != -1) {
+                        funPrefix = funPrefix.substring(0, lastSlash)
+                    }
+                    val returnValue = pop()
+                    val returnAddress = pop()
+                    push(returnValue)
+                    ip = returnAddress
+                }
             }
+            ++ip
         }
-        ++ip
     }
 }

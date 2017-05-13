@@ -4,7 +4,9 @@ import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
 import ru.ifmo.ctddev.isaev.parser.LangLexer
 import ru.ifmo.ctddev.isaev.parser.LangParser
+import java.io.BufferedReader
 import java.io.File
+import java.io.PrintWriter
 
 
 fun main(args: Array<String>) {
@@ -26,13 +28,14 @@ fun printPrefix(): String {
     return if (write_count > 0) "" else ("> ".repeat(read_count))
 }
 
-fun builtInRead(): Int {
+fun builtInRead(reader: BufferedReader): Int {
     ++read_count
-    return readLine()!!.toInt()
+    return reader.readLine()!!.toInt()
 }
 
-fun builtInWrite(arg: Int): Unit {
-    println(printPrefix() + arg)
+fun builtInWrite(arg: Int, writer: PrintWriter): Unit {
+    writer.println(printPrefix() + arg)
+    writer.flush()
     ++write_count
 }
 
@@ -45,13 +48,13 @@ fun buildAST(program: String): AST {
 }
 
 fun runInterpreter(program: AST) {
-    interpret(program)
+    Interpreter().run(program)
 }
 
 fun runStackMachine(program: AST) {
     val compiledSTM = compile(program)
     compiledSTM.forEachIndexed { i, op -> println("$i: $op") }
-    runStackMachine(compiledSTM)
+    StackMachine().run(compiledSTM)
 }
 
 fun compileToASM(program: AST) {

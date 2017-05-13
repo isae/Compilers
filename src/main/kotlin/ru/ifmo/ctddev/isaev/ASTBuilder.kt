@@ -4,11 +4,24 @@ import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor
 import org.antlr.v4.runtime.tree.TerminalNode
 import ru.ifmo.ctddev.isaev.parser.LangParser
 import ru.ifmo.ctddev.isaev.parser.LangVisitor
+import java.util.*
 
 /**
  * @author iisaev
  */
 class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
+    override fun visitPointerAccess(ctx: LangParser.PointerAccessContext?): AST {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun visitPointer(ctx: LangParser.PointerContext?): AST {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun visitArrayDeclaration(ctx: LangParser.ArrayDeclarationContext?): AST {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun visitElifs(ctx: LangParser.ElifsContext?): AST {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
