@@ -10,15 +10,7 @@ import java.util.*
  * @author iisaev
  */
 class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
-    override fun visitFunctionName(ctx: LangParser.FunctionNameContext?): AST.Variable {
-        return AST.Variable(ctx!!.FunctionName().text)
-    }
-
     override fun visitPointerAccess(ctx: LangParser.PointerAccessContext?): AST {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun visitPointer(ctx: LangParser.PointerContext?): AST {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
@@ -161,11 +153,11 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
 
     override fun visitFunctionDef(ctx: LangParser.FunctionDefContext?): AST.FunctionDef {
         assert(ctx!!.childCount == 8)
-        val functionName = visitFunctionName(ctx.getChild(1) as LangParser.FunctionNameContext)
+        val functionName = ctx.getChild(1).text
         val args = visitArgs(ctx.getChild(3) as LangParser.ArgListContext)
         val body = visitStatements(ctx.getChild(6) as LangParser.CodeBlockContext)
         return AST.FunctionDef(
-                functionName.name,
+                functionName,
                 args.map { it as AST.Variable }.map { it.name },
                 body
         )

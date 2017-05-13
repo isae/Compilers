@@ -32,7 +32,7 @@ cond
     ;
 
 elifs
-    : (ELIF expr THEN codeBlock)*;
+    : ('elif' expr 'then' codeBlock)*;
 
 
 argList
@@ -44,7 +44,7 @@ functionCall
     ;
 
 functionDef
-    : 'fun' functionName '(' argList ')' 'begin' codeBlock END
+    : 'fun' variable '(' argList ')' 'begin' codeBlock 'end'
     ;
     
 arrayDeclaration
@@ -52,7 +52,7 @@ arrayDeclaration
     ;
 
 pointerAccess    
-    : pointer ('[' expr ']')+
+    : variable ('[' expr ']')+
     ;
   
 /* Logical operations have the lowest precedence. */
@@ -75,12 +75,6 @@ atom
     
 variable: 
     Var;
-    
-functionName: 
-    FunctionName;
-
-pointer: 
-    Pointer;
     
 // LEXER
     
@@ -105,14 +99,13 @@ ELIF : 'elif';
 // Accepted characters
 fragment Uppercase       :    [A-Z];
 fragment Lowercase       :    [a-z];
-fragment Letter          :    Uppercase | Lowercase | '_';
-fragment LetterOrDigit   :    Letter | [0-9];
+fragment Letter          :    [a-zA-Z_];
+fragment LetterOrDigit   :    [a-zA-Z_0-9];
+
 Number                    :    [0-9]+;
 Char                      :    '\'' .+? '\'';
 String                    :    '"' .+? '"';
-Var                       :    Lowercase LetterOrDigit*;
-Pointer                   :    Uppercase LetterOrDigit*;
-FunctionName              :    Letter LetterOrDigit*;
+Var                       :    Letter LetterOrDigit*;
 
 // Whitespaces
 WS  
