@@ -24,9 +24,9 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
             is AST.UnaryMinus -> Val.Number(-takeInt(interpret(node.arg, ctx, funCtx)))
             is AST.Binary -> Val.Number(
                     apply(
-                            takeInt(interpret(node.left, ctx, funCtx)),
-                            takeInt(interpret(node.right, ctx, funCtx)),
-                            node.op
+                            interpret(node.left, ctx, funCtx),
+                            interpret(node.right, ctx, funCtx),
+                            node
                     )
             )
             is AST.FunctionCall -> {
@@ -54,7 +54,7 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                         return Val.Character(str[index])
                     }
                     "strset" -> {
-                        assertArgNumber(node.functionName, 2, node.args.size)
+                        assertArgNumber(node.functionName, 3, node.args.size)
                         val str = takeString(interpret(node.args[0], ctx, funCtx))
                         val index = takeInt(interpret(node.args[1], ctx, funCtx))
                         val char = takeChar(interpret(node.args[2], ctx, funCtx))
@@ -68,16 +68,15 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                         val to = takeInt(interpret(node.args[2], ctx, funCtx))
                         return Val.Str(str.substring(from, to))
                     }
-                    "strsub" -> {
-                        assertArgNumber(node.functionName, 3, node.args.size)
-                        val str = takeString(interpret(node.args[0], ctx, funCtx))
-                        val from = takeInt(interpret(node.args[1], ctx, funCtx))
-                        val to = takeInt(interpret(node.args[2], ctx, funCtx))
-                        return Val.Str(str.substring(from, to))
-                    }
                     "strdup" -> {
                         assertArgNumber(node.functionName, 1, node.args.size)
                         return Val.Str(takeString(interpret(node.args[0], ctx, funCtx)))
+                    }
+                    "strcat" -> {
+                        assertArgNumber(node.functionName, 2, node.args.size)
+                        val fst = takeString(interpret(node.args[0], ctx, funCtx)).toString()
+                        val snd = takeString(interpret(node.args[1], ctx, funCtx)).toString()
+                        return Val.Str(fst + snd)
                     }
                     "strcmp" -> {
                         assertArgNumber(node.functionName, 2, node.args.size)

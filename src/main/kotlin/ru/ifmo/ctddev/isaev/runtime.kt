@@ -78,7 +78,13 @@ fun assertArgNumber(functionName: String, expected: Int, actual: Int) {
 }
 
 fun builtInWrite(arg: Val, writer: PrintWriter): Unit {
-    writer.println(printPrefix() + arg)
+    val value = when (arg) {
+        is Val.Number -> arg.value
+        is Val.Str -> arg.value
+        is Val.Character -> arg.value.toInt()
+        else -> throw IllegalStateException("${arg::class.simpleName} has no value")
+    }
+    writer.println(printPrefix() + value)
     writer.flush()
     ++write_count
 }
