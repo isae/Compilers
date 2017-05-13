@@ -65,12 +65,39 @@ fun apply(l: Char, r: Char, op: String): Int {
 }
 
 sealed class Val {
-    class Void : Val()
-    class Number(val value: Int) : Val()
-    class Character(val value: Char) : Val()
+    class Void : Val() {
+        override fun copy(): Val {
+            return this;
+        }
+    }
+
+    class Number(val value: Int) : Val() {
+        override fun copy(): Val {
+            return Number(value)
+        }
+    }
+
+    class Array(val content: List<Val>) : Val() {
+        override fun copy(): Val {
+            return Array(content.map { it.copy() })
+        }
+    }
+
+    class Character(val value: Char) : Val() {
+        override fun copy(): Val {
+            return Character(value)
+        }
+    }
+
     class Str(val value: StringBuilder) : Val() {
+        override fun copy(): Val {
+            return Str(value.toString())
+        }
+
         constructor(strValue: String) : this(StringBuilder(strValue))
     }
+
+    abstract fun copy(): Val
 }
 
 val ZERO = Val.Number(0)

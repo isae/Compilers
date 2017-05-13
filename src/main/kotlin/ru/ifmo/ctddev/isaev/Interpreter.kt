@@ -91,6 +91,22 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                         val char = takeChar(interpret(node.args[1], ctx, funCtx))
                         return Val.Str(char.toString().repeat(numberOfChars))
                     }
+                    "arrmake" -> {
+                        assertArgNumber(node.functionName, 2, node.args.size)
+                        val size = takeInt(interpret(node.args[0], ctx, funCtx))
+                        val value = interpret(node.args[1], ctx, funCtx)
+                        val result = ArrayList<Val>()
+                        repeat(size, {
+                            result.add(value.copy())
+                        })
+                        return Val.Array(result)
+                    }
+                    "arrlen" -> {
+                        assertArgNumber(node.functionName, 1, node.args.size)
+                        val value = interpret(node.args[0], ctx, funCtx);
+                        val array = value as? Val.Array ?: throw IllegalStateException("An argument of arrlen must be an array; found ${value::class.simpleName}")
+                        return Val.Number(array.content.size)
+                    }
                     else -> {
                         val function = funCtx[node.functionName] ?: throw IllegalStateException("Invalid function name: ${node.functionName}")
                         val localCtx = HashMap<String, Val>()
