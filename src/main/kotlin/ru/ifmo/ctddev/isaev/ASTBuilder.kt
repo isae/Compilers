@@ -10,6 +10,14 @@ import java.util.*
  * @author iisaev
  */
 class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
+    override fun visitBoolConst(ctx: LangParser.BoolConstContext?): AST {
+        if (ctx?.TRUE() != null) {
+            return AST_ONE
+        } else {
+            return AST_ZERO
+        }
+    }
+
     override fun visitPointerAccess(ctx: LangParser.PointerAccessContext?): AST {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -203,6 +211,7 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
         return when (child) {
             is LangParser.VariableContext -> visitVariable(child)
             is LangParser.FunctionCallContext -> visitFunctionCall(child)
+            is LangParser.BoolConstContext -> visitBoolConst(child)
             is TerminalNode -> {
                 val nodeText = child.text
                 return if (nodeText == "(") {
@@ -215,7 +224,7 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
                         }
                         value = Val.Character(nodeText[1])
                     } else if (nodeText.startsWith("\"")) {
-                        value = Val.Str(nodeText.substring(1..nodeText.length - 1))
+                        value = Val.Str(nodeText.substring(1..nodeText.length - 2))
                     } else {
                         value = Val.Number(nodeText.toInt())
                     }

@@ -71,16 +71,21 @@ expr
          ;
         
 atom
-    :    variable | functionCall | Number | Char | String | arrayDeclaration | pointerAccess | '(' expr ')';
+    :    boolConst | variable | functionCall | Number | Char | String | arrayDeclaration | pointerAccess | '(' expr ')';
     
 variable: 
     Var;
+    
+boolConst: 
+    TRUE | FALSE;    
     
 // LEXER
     
 // Keywords    
 SKIP_ : 'skip';
-WHILE : 'while';    
+WHILE : 'while';
+TRUE : 'true';
+FALSE : 'false';
 REPEAT : 'repeat';    
 FOR : 'for';    
 IF : 'if';  

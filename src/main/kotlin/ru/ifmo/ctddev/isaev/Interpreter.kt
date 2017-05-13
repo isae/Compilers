@@ -70,7 +70,7 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                     }
                     "strdup" -> {
                         assertArgNumber(node.functionName, 1, node.args.size)
-                        return Val.Str(takeString(interpret(node.args[0], ctx, funCtx)))
+                        return Val.Str(takeString(interpret(node.args[0], ctx, funCtx)).toString())
                     }
                     "strcat" -> {
                         assertArgNumber(node.functionName, 2, node.args.size)
@@ -83,6 +83,12 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                         val fst = takeString(interpret(node.args[0], ctx, funCtx)).toString()
                         val snd = takeString(interpret(node.args[1], ctx, funCtx)).toString()
                         return Val.Number(fst.compareTo(snd))
+                    }
+                    "strmake" -> {
+                        assertArgNumber(node.functionName, 2, node.args.size)
+                        val numberOfChars = takeInt(interpret(node.args[0], ctx, funCtx))
+                        val char = takeChar(interpret(node.args[1], ctx, funCtx))
+                        return Val.Str(char.toString().repeat(numberOfChars))
                     }
                     else -> {
                         val function = funCtx[node.functionName] ?: throw IllegalStateException("Invalid function name: ${node.functionName}")
@@ -148,6 +154,7 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
     }
 
     fun run(program: AST): Val {
+        init()
         return interpret(program, HashMap(), HashMap())
     }
 }

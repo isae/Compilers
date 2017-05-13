@@ -74,7 +74,7 @@ sealed class Val {
 }
 
 val ZERO = Val.Number(0)
-val ONE = Val.Number(0)
+val ONE = Val.Number(1)
 
 val AST_ZERO = AST.Const(ZERO)
 val AST_ONE = AST.Const(ONE)
