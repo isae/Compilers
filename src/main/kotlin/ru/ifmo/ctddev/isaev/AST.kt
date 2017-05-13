@@ -108,6 +108,7 @@ sealed class AST {
     class WhileLoop(val expr: AST, val loop: List<AST>) : AST()
     class UnaryMinus(val arg: AST) : AST()
     class ForLoop(val init: List<AST>, val expr: AST, val increment: List<AST>, val loop: List<AST>) : AST()
+    class Array(val content: List<AST>) : AST()
     class RepeatLoop(val expr: AST, val loop: List<AST>) : AST()
 }
 

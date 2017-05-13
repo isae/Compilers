@@ -47,14 +47,14 @@ functionDef
     : 'fun' variable '(' argList ')' 'begin' codeBlock 'end'
     ;
     
-arrayDeclaration
+boxedArrayDeclaration
     : '{'  (expr)? (','expr)* '}'
     ;
 
-pointerAccess    
-    : variable ('[' expr ']')+
-    ;
-  
+unboxedArrayDeclaration
+    : '['  (expr)? (','expr)* ']'
+    ;    
+
 /* Logical operations have the lowest precedence. */
 expr
     :    atom
@@ -71,10 +71,10 @@ expr
          ;
         
 atom
-    :    boolConst | variable | functionCall | Number | Char | String | arrayDeclaration | pointerAccess | '(' expr ')';
+    :    boolConst | variable | functionCall | Number | Char | String | boxedArrayDeclaration | unboxedArrayDeclaration | '(' expr ')';
     
 variable: 
-    Var;
+    Var ('[' expr ']')*;
     
 boolConst: 
     TRUE | FALSE;    

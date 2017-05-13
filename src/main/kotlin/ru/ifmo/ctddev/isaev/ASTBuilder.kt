@@ -10,20 +10,26 @@ import java.util.*
  * @author iisaev
  */
 class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
+    override fun visitUnboxedArrayDeclaration(ctx: LangParser.UnboxedArrayDeclarationContext?): AST {
+        val content = ArrayList<AST>()
+        var i = 1
+        while (i < ctx!!.childCount) {
+            content += visitExpr(ctx.getChild(i) as LangParser.ExprContext)
+            i += 2
+        }
+        return AST.Array(content)
+    }
+
+    override fun visitBoxedArrayDeclaration(ctx: LangParser.BoxedArrayDeclarationContext?): AST {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
     override fun visitBoolConst(ctx: LangParser.BoolConstContext?): AST {
         if (ctx?.TRUE() != null) {
             return AST_ONE
         } else {
             return AST_ZERO
         }
-    }
-
-    override fun visitPointerAccess(ctx: LangParser.PointerAccessContext?): AST {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun visitArrayDeclaration(ctx: LangParser.ArrayDeclarationContext?): AST {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun visitElifs(ctx: LangParser.ElifsContext?): AST {
@@ -212,6 +218,7 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
             is LangParser.VariableContext -> visitVariable(child)
             is LangParser.FunctionCallContext -> visitFunctionCall(child)
             is LangParser.BoolConstContext -> visitBoolConst(child)
+            is LangParser.UnboxedArrayDeclarationContext -> visitUnboxedArrayDeclaration(child)
             is TerminalNode -> {
                 val nodeText = child.text
                 return if (nodeText == "(") {

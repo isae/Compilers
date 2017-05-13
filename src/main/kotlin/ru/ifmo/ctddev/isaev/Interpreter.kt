@@ -21,6 +21,7 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
             is AST.Skip -> Val.Void()
             is AST.Const -> node.value
             is AST.Variable -> ctx[node.name] ?: throw IllegalStateException("No such variable: ${node.name}")
+            is AST.Array -> TODO("Not implemented!")
             is AST.UnaryMinus -> Val.Number(-takeInt(interpret(node.arg, ctx, funCtx)))
             is AST.Binary -> Val.Number(
                     apply(
