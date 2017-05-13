@@ -190,9 +190,9 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
                 "&" -> AST.Binary.And(left, right)
                 "|" -> AST.Binary.Or(left, right)
                 "!!" -> AST.Binary.Or(left, right)
-                "&&" -> AST.Conditional(AST.Binary.Eq(left, AST.Const(0)), listOf(AST.Const(0)), emptyList(), listOf(right))
+                "&&" -> AST.Conditional(AST.Binary.Eq(left, AST_ZERO), listOf(AST_ZERO), emptyList(), listOf(right))
             // TODO: here we treat numbers as booleans (replacing positive value with 1)
-                "||" -> AST.Conditional(AST.Binary.Neq(left, AST.Const(0)), listOf(AST.Const(1)), emptyList(), listOf(right))
+                "||" -> AST.Conditional(AST.Binary.Neq(left, AST_ZERO), listOf(AST_ONE), emptyList(), listOf(right))
                 else -> throw IllegalStateException("Unknown term in expression: ${term.text}")
             }
         }
@@ -205,9 +205,21 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
             is LangParser.FunctionCallContext -> visitFunctionCall(child)
             is TerminalNode -> {
                 val nodeText = child.text
-                return when (nodeText) {
-                    "(" -> visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
-                    else -> AST.Const(nodeText.toInt())
+                return if (nodeText == "(") {
+                    visitExpr(ctx.getChild(1) as LangParser.ExprContext?)
+                } else {
+                    val value: Val
+                    if (nodeText.startsWith("\'")) {
+                        if (nodeText.length != 3) {
+                            throw IllegalStateException("Invalid character: ${nodeText}")
+                        }
+                        value = Val.Character(nodeText[1])
+                    } else if (nodeText.startsWith("\"")) {
+                        value = Val.Str(nodeText.substring(1..nodeText.length - 1))
+                    } else {
+                        value = Val.Number(nodeText.toInt())
+                    }
+                    return AST.Const(value)
                 }
             }
             else -> throw IllegalArgumentException("Unknown node: ${child::class}")

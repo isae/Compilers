@@ -33,12 +33,51 @@ fun printPrefix(): String {
     return if (write_count > 0) "" else ("> ".repeat(read_count))
 }
 
-fun builtInRead(reader: BufferedReader): Int {
+fun builtInRead(reader: BufferedReader): Val {
     ++read_count
-    return reader.readLine()!!.toInt()
+    val str = reader.readLine()
+    try {
+        return Val.Number(str!!.toInt())
+    } catch (e: NumberFormatException) {
+        return if (str.length == 1) {
+            Val.Character(str[0])
+        } else {
+            Val.Str(str)
+        }
+    }
 }
 
-fun builtInWrite(arg: Int, writer: PrintWriter): Unit {
+fun takeInt(arg: Val): Int {
+    if (arg is Val.Number) {
+        return arg.value
+    } else {
+        throw IllegalStateException("Type mismatch: expected Int, found ${arg::class.simpleName}")
+    }
+}
+
+fun takeString(arg: Val): StringBuilder {
+    if (arg is Val.Str) {
+        return arg.value
+    } else {
+        throw IllegalStateException("Type mismatch: expected String, found ${arg::class.simpleName}")
+    }
+}
+
+fun takeChar(arg: Val): Char {
+    if (arg is Val.Character) {
+        return arg.value
+    } else {
+        throw IllegalStateException("Type mismatch: expected Char, found ${arg::class.simpleName}")
+    }
+}
+
+fun assertArgNumber(functionName: String, expected: Int, actual: Int) {
+    if (expected != actual) {
+        throw IllegalStateException("Expected $expected args for function $functionName, but found $actual")
+    }
+}
+
+fun builtInWrite(arg: Val, writer: PrintWriter): Unit {
     writer.println(printPrefix() + arg)
     writer.flush()
     ++write_count

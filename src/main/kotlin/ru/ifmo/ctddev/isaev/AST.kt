@@ -24,8 +24,23 @@ fun apply(l: Int, r: Int, op: String): Int {
     }
 }
 
+sealed class Val {
+    class Void : Val()
+    class Number(val value: Int) : Val()
+    class Character(val value: Char) : Val()
+    class Str(val value: StringBuilder) : Val() {
+        constructor(strValue: String) : this(StringBuilder(strValue))
+    }
+}
+
+val ZERO = Val.Number(0)
+val ONE = Val.Number(0)
+
+val AST_ZERO = AST.Const(ZERO)
+val AST_ONE = AST.Const(ONE)
+
 sealed class AST {
-    class Const(val number: Int) : AST()
+    class Const(val value: Val) : AST()
     class Skip : AST()
     class Variable(val name: String) : AST()
     sealed class Binary(val left: AST, val right: AST, val op: String) : AST() {

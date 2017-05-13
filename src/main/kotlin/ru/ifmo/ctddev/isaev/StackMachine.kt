@@ -123,7 +123,7 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
     when (node) {
         is AST.Skip -> {
         }
-        is AST.Const -> stack += StackOp.Push(node.number)
+        is AST.Const -> stack += StackOp.Push(takeInt(node.value))
         is AST.Variable -> stack += StackOp.Ld(node.name)
         is AST.UnaryMinus -> { // -a == 0-a
             stack += StackOp.Push(0)
@@ -329,8 +329,8 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
         while (ip < operations.size) {
             val it = operations[ip]
             when (it) {
-                is StackOp.Read -> push(builtInRead(reader))
-                is StackOp.Write -> builtInWrite(pop(), writer)
+                is StackOp.Read -> push(takeInt(builtInRead(reader)))
+                is StackOp.Write -> builtInWrite(Val.Number(pop()), writer)
                 is StackOp.Nop -> {
                 }
                 is StackOp.Label -> {
