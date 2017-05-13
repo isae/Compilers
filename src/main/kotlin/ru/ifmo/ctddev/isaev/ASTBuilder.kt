@@ -12,8 +12,11 @@ import java.util.*
 class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
     override fun visitUnboxedArrayDeclaration(ctx: LangParser.UnboxedArrayDeclarationContext?): AST {
         val content = ArrayList<AST>()
+        if(ctx!!.childCount == 2){
+            return AST.Array(content)
+        }
         var i = 1
-        while (i < ctx!!.childCount) {
+        while (i < ctx.childCount) {
             content += visitExpr(ctx.getChild(i) as LangParser.ExprContext)
             i += 2
         }
@@ -21,7 +24,16 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
     }
 
     override fun visitBoxedArrayDeclaration(ctx: LangParser.BoxedArrayDeclarationContext?): AST {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val content = ArrayList<AST>()
+        if(ctx!!.childCount == 2){
+            return AST.Array(content)
+        }
+        var i = 1
+        while (i < ctx.childCount) {
+            content += visitExpr(ctx.getChild(i) as LangParser.ExprContext)
+            i += 2
+        }
+        return AST.Array(content)
     }
 
     override fun visitBoolConst(ctx: LangParser.BoolConstContext?): AST {
@@ -219,6 +231,7 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
             is LangParser.FunctionCallContext -> visitFunctionCall(child)
             is LangParser.BoolConstContext -> visitBoolConst(child)
             is LangParser.UnboxedArrayDeclarationContext -> visitUnboxedArrayDeclaration(child)
+            is LangParser.BoxedArrayDeclarationContext -> visitBoxedArrayDeclaration(child)
             is TerminalNode -> {
                 val nodeText = child.text
                 return if (nodeText == "(") {
@@ -251,7 +264,7 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
             var i = 2
             while (i < ctx.childCount) {
                 indexes += visitExpr(ctx.getChild(i) as LangParser.ExprContext)
-                i += 2
+                i += 3
             }
             return AST.Variable.Index(variableName, indexes)
         }

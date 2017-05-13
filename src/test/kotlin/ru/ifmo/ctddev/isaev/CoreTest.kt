@@ -15,7 +15,6 @@ class CoreTest {
                 .filter { it.name.startsWith("test0") }
                 .map { it.nameWithoutExtension }
                 .distinct()
-                .subList(0, 29)
                 .forEach { testInterpreterOnFile(it) }
     }
 

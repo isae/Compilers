@@ -98,16 +98,8 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                         val char = takeChar(interpret(node.args[1], ctx, funCtx))
                         return Val.Str(char.toString().repeat(numberOfChars))
                     }
-                    "arrmake" -> {
-                        assertArgNumber(node.functionName, 2, node.args.size)
-                        val size = takeInt(interpret(node.args[0], ctx, funCtx))
-                        val value = interpret(node.args[1], ctx, funCtx)
-                        val result = ArrayList<Val>()
-                        repeat(size, {
-                            result.add(value.copy())
-                        })
-                        return Val.Array(result)
-                    }
+                    "Arrmake" -> return performArrMake(node, ctx, funCtx)
+                    "arrmake" -> return performArrMake(node, ctx, funCtx)
                     "arrlen" -> {
                         assertArgNumber(node.functionName, 1, node.args.size)
                         val value = interpret(node.args[0], ctx, funCtx);
@@ -189,6 +181,17 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                 return last
             }
         }
+    }
+
+    private fun performArrMake(node: AST.FunctionCall, ctx: MutableMap<String, Val>, funCtx: MutableMap<String, AST.FunctionDef>): Val.Array {
+        assertArgNumber(node.functionName, 2, node.args.size)
+        val size = takeInt(interpret(node.args[0], ctx, funCtx))
+        val value = interpret(node.args[1], ctx, funCtx)
+        val result = ArrayList<Val>()
+        repeat(size, {
+            result.add(value.copy())
+        })
+        return Val.Array(result)
     }
 
     private fun parseArrayVariable(variable: AST.Variable, ctx: MutableMap<String, Val>, indexes: List<Int>): Val.Array {
