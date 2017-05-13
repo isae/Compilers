@@ -300,7 +300,7 @@ fun searchLocalVariables(node: AST, results: MutableSet<String>): Unit {
 class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader(System.`in`)),
                    val writer: PrintWriter = PrintWriter(OutputStreamWriter(System.out))) {
 
-    fun run(operations: List<StackOp>) {
+    private fun runStackMachine(operations: List<StackOp>) {
         var funPrefix = "_main"
         val mem = HashMap<String, Int>()
 
@@ -385,5 +385,11 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
             }
             ++ip
         }
+
+    }
+
+    fun run(operations: List<StackOp>) {
+        init()
+        runStackMachine(operations)
     }
 }

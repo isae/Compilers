@@ -24,6 +24,11 @@ fun main(args: Array<String>) {
 var read_count: Int = 0
 var write_count: Int = 0
 
+fun init() { //TODO: remove this shitty hack
+    read_count = 0
+    write_count = 0
+}
+
 fun printPrefix(): String {
     return if (write_count > 0) "" else ("> ".repeat(read_count))
 }

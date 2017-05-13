@@ -44,7 +44,7 @@ functionCall
     ;
 
 functionDef
-    : 'fun' variable '(' argList ')' 'begin' codeBlock END
+    : 'fun' functionName '(' argList ')' 'begin' codeBlock END
     ;
     
 arrayDeclaration
@@ -75,6 +75,9 @@ atom
     
 variable: 
     Var;
+    
+functionName: 
+    FunctionName;
 
 pointer: 
     Pointer;
@@ -109,6 +112,7 @@ Char                      :    '\'' .+? '\'';
 String                    :    '"' .+? '"';
 Var                       :    Lowercase LetterOrDigit*;
 Pointer                   :    Uppercase LetterOrDigit*;
+FunctionName              :    Letter LetterOrDigit*;
 
 // Whitespaces
 WS  

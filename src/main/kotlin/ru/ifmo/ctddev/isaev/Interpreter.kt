@@ -103,6 +103,7 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
     }
 
     fun run(program: AST): Int {
+        init()
         return interpret(program, HashMap(), HashMap())
     }
 }
