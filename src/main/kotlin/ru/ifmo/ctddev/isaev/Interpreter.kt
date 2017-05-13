@@ -20,8 +20,15 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
         return when (node) {
             is AST.Skip -> Val.Void()
             is AST.Const -> node.value
-            is AST.Variable -> ctx[node.name] ?: throw IllegalStateException("No such variable: ${node.name}")
-            is AST.Array -> TODO("Not implemented!")
+            is AST.Variable.Simple -> ctx[node.name] ?: throw IllegalStateException("No such variable: ${node.name}")
+            is AST.Variable.Index -> {
+                val indexes = node.indexes
+                        .map { interpret(it, ctx, funCtx) }
+                        .map { takeInt(it) }
+                val rootArray = parseArrayVariable(node, ctx, indexes)
+                return rootArray.content[indexes.last()]
+            }
+            is AST.Array -> Val.Array(node.content.map { interpret(it, ctx, funCtx) }.toMutableList())
             is AST.UnaryMinus -> Val.Number(-takeInt(interpret(node.arg, ctx, funCtx)))
             is AST.Binary -> Val.Number(
                     apply(
@@ -140,9 +147,23 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                 return interpretStatements(node.ifFalse, ctx, funCtx)
             }
             is AST.Assignment -> {
-                val result = interpret(node.toAssign, ctx, funCtx)
-                ctx[node.variable.name] = result
-                return result
+                val variable = node.variable
+                when (variable) {
+                    is AST.Variable.Simple -> {
+                        val result = interpret(node.toAssign, ctx, funCtx)
+                        ctx[variable.name] = result
+                        return result
+                    }
+                    is AST.Variable.Index -> {
+                        val indexes = variable.indexes
+                                .map { interpret(it, ctx, funCtx) }
+                                .map { takeInt(it) }
+                        val rootArray = parseArrayVariable(variable, ctx, indexes)
+                        val result = interpret(node.toAssign, ctx, funCtx)
+                        rootArray.content[indexes.last()] = result
+                        return result
+                    }
+                }
             }
             is AST.WhileLoop -> {
                 var last = Val.Void() as Val
@@ -168,6 +189,18 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                 return last
             }
         }
+    }
+
+    private fun parseArrayVariable(variable: AST.Variable, ctx: MutableMap<String, Val>, indexes: List<Int>): Val.Array {
+        var arrName = variable.name
+        var rootArray = ctx[variable.name] as? Val.Array
+                ?: throw IllegalStateException("$arrName is not an array")
+        indexes.take(indexes.size - 1).map({ idx ->
+            arrName = "$arrName[$idx]"
+            rootArray = rootArray.content[idx]as? Val.Array
+                    ?: throw IllegalStateException("$arrName is not an array")
+        })
+        return rootArray
     }
 
     fun run(program: AST): Val {

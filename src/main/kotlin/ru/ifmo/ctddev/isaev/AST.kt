@@ -77,9 +77,9 @@ sealed class Val {
         }
     }
 
-    class Array(val content: List<Val>) : Val() {
+    class Array(val content: MutableList<Val>) : Val() {
         override fun copy(): Val {
-            return Array(content.map { it.copy() })
+            return Array(content.map { it.copy() }.toMutableList())
         }
     }
 
@@ -109,7 +109,11 @@ val AST_ONE = AST.Const(ONE)
 sealed class AST {
     class Const(val value: Val) : AST()
     class Skip : AST()
-    class Variable(val name: String) : AST()
+    sealed class Variable(val name: String) : AST() {
+        class Simple(name: String) : Variable(name)
+        class Index(name: String, val indexes: List<AST>) : Variable(name)
+    }
+
     sealed class Binary(val left: AST, val right: AST, val op: String, val intOnly: Boolean) : AST() {
         class Add(l: AST, r: AST) : Binary(l, r, "+", true)
         class Sub(l: AST, r: AST) : Binary(l, r, "-", true)

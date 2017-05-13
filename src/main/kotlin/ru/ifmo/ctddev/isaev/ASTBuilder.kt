@@ -243,6 +243,17 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
     }
 
     override fun visitVariable(ctx: LangParser.VariableContext?): AST.Variable {
-        return AST.Variable(ctx!!.Var().text)
+        val variableName = ctx!!.Var().text
+        if (ctx.childCount == 1) {
+            return AST.Variable.Simple(variableName)
+        } else {
+            val indexes = ArrayList<AST>()
+            var i = 2
+            while (i < ctx.childCount) {
+                indexes += visitExpr(ctx.getChild(i) as LangParser.ExprContext)
+                i += 2
+            }
+            return AST.Variable.Index(variableName, indexes)
+        }
     }
 }
