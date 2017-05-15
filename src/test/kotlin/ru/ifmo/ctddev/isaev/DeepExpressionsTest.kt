@@ -1,6 +1,6 @@
 package ru.ifmo.ctddev.isaev
 
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -12,23 +12,28 @@ import java.io.*
  */
 
 @RunWith(Parameterized::class)
-class CoreTest(val testName: String,
-               val expr: String,
-               val input: String,
-               val expectedOutput: String) {
-    
+class DeepExpressionsTest(val testName: String,
+                      val expr: String,
+                      val input: String,
+                      val expectedOutput: String) {
+
     companion object {
         @JvmStatic
-        val testFolder = "./compiler-tests/core"
-        
+        val testFolder = "./compiler-tests/deep-expressions"
+
         @JvmStatic
         @Parameterized.Parameters
         fun getParameters(): List<Array<String>> {
             return File(testFolder)
                     .listFiles()
-                    .filter { it.name.startsWith("test0") }
+                    .filter { it.name.startsWith("generated0") }
                     .map { it.nameWithoutExtension }
                     .distinct()
+                    .filter { fileName ->
+                        File("${ExpressionsTest.testFolder}/$fileName.expr").exists() &&
+                                File("${ExpressionsTest.testFolder}/$fileName.input").exists() &&
+                                File("${ExpressionsTest.testFolder}/orig/$fileName.log").exists()
+                    }
                     .map { fileName ->
                         val expr = File("$testFolder/$fileName.expr").readText()
                         val input = File("$testFolder/$fileName.input").readText()
@@ -37,26 +42,21 @@ class CoreTest(val testName: String,
                     }
         }
     }
-
+  
     @Test
     fun testInterpreter() {
-        println(expr)
-        println(input)
-        println(expectedOutput)
         val compiledProgram = buildAST(expr)
         val inputReader = BufferedReader(StringReader(input))
         val outputStream = ByteArrayOutputStream(256)
         val outputWriter = PrintWriter(OutputStreamWriter(outputStream))
         Interpreter(inputReader, outputWriter).run(compiledProgram)
         val actualOutput = String(outputStream.toByteArray())
-        Assert.assertEquals("Expected different output", expectedOutput, actualOutput)
+        assertEquals("$testName: Expected different output for program\n\n$expr\n\nand input\n\n$input\n\n", 
+                expectedOutput, actualOutput)
     }
 
     @Test
     fun testStm() {
-        println(expr)
-        println(input)
-        println(expectedOutput)
         val programAST = buildAST(expr)
         val compiledSTM = compile(programAST)
         val inputReader = BufferedReader(StringReader(input))
@@ -64,6 +64,7 @@ class CoreTest(val testName: String,
         val outputWriter = PrintWriter(OutputStreamWriter(outputStream))
         StackMachine(inputReader, outputWriter).run(compiledSTM)
         val actualOutput = String(outputStream.toByteArray())
-        Assert.assertEquals("$testName: expected different output", expectedOutput, actualOutput)
+        assertEquals("$testName: Expected different output for program\n\n$expr\n\nand input\n\n$input\n\n",
+                expectedOutput, actualOutput)
     }
 }

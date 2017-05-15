@@ -12,7 +12,7 @@ import java.util.*
 class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
     override fun visitUnboxedArrayDeclaration(ctx: LangParser.UnboxedArrayDeclarationContext?): AST {
         val content = ArrayList<AST>()
-        if(ctx!!.childCount == 2){
+        if (ctx!!.childCount == 2) {
             return AST.Array(content)
         }
         var i = 1
@@ -25,7 +25,7 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
 
     override fun visitBoxedArrayDeclaration(ctx: LangParser.BoxedArrayDeclarationContext?): AST {
         val content = ArrayList<AST>()
-        if(ctx!!.childCount == 2){
+        if (ctx!!.childCount == 2) {
             return AST.Array(content)
         }
         var i = 1
@@ -216,9 +216,34 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
                 "&" -> AST.Binary.And(left, right)
                 "|" -> AST.Binary.Or(left, right)
                 "!!" -> AST.Binary.Or(left, right)
-                "&&" -> AST.Conditional(AST.Binary.Eq(left, AST_ZERO), listOf(AST_ZERO), emptyList(), listOf(right))
+                "&&" -> AST.Conditional(
+                        AST.Binary.Eq(left, AST_ZERO),
+                        listOf(AST_ZERO),
+                        emptyList(),
+                        listOf(
+                                AST.Conditional(
+                                        AST.Binary.Eq(right, AST_ZERO),
+                                        listOf(AST_ZERO),
+                                        emptyList(),
+                                        listOf(AST_ONE)
+                                )
+                        )
+                )
             // TODO: here we treat numbers as booleans (replacing positive value with 1)
-                "||" -> AST.Conditional(AST.Binary.Neq(left, AST_ZERO), listOf(AST_ONE), emptyList(), listOf(right))
+            // TODO: too fat AST for such simple literal
+                "||" -> AST.Conditional(
+                        AST.Binary.Neq(left, AST_ZERO),
+                        listOf(AST_ONE),
+                        emptyList(),
+                        listOf(
+                                AST.Conditional(
+                                        AST.Binary.Eq(right, AST_ZERO),
+                                        listOf(AST_ZERO),
+                                        emptyList(),
+                                        listOf(AST_ONE)
+                                )
+                        )
+                )
                 else -> throw IllegalStateException("Unknown term in expression: ${term.text}")
             }
         }
