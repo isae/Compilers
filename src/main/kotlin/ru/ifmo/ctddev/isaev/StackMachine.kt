@@ -131,74 +131,11 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
         }
         is AST.FunctionCall -> {
             node.args.reversed().forEach { compile(it, stack) }
-            when (node.functionName) {
-                "read" -> stack += perStackOp.BuiltIn.Read()
-                "write" -> {
-                    if (node.args.size != 1) {
-                        TODO("Vararg write")
-                    }
-                    compile(node.args[0], stack)
-                    stack += StackOp.BuiltIn.Write()
-                }
-                "strlen" -> {
-                    assertArgNumber(node.functionName, 1, node.args.size)
-                    val value = takeString(interpret(node.args[0]))
-                    return Val.Number(value.length)
-                }
-                "strget" -> {
-                    assertArgNumber(node.functionName, 2, node.args.size)
-                    val str = takeString(interpret(node.args[0]))
-                    val index = takeInt(interpret(node.args[1]))
-                    return Val.Character(str[index])
-                }
-                "strset" -> {
-                    assertArgNumber(node.functionName, 3, node.args.size)
-                    val str = takeString(interpret(node.args[0]))
-                    val index = takeInt(interpret(node.args[1]))
-                    val char = takeChar(interpret(node.args[2]))
-                    str[index] = char
-                    return Val.Void()
-                }
-                "strsub" -> {
-                    assertArgNumber(node.functionName, 3, node.args.size)
-                    val str = takeString(interpret(node.args[0]))
-                    val from = takeInt(interpret(node.args[1]))
-                    val length = takeInt(interpret(node.args[2]))
-                    return Val.Str(str.substring(from, from + length))
-                }
-                "strdup" -> {
-                    assertArgNumber(node.functionName, 1, node.args.size)
-                    return Val.Str(takeString(interpret(node.args[0])).toString())
-                }
-                "strcat" -> {
-                    assertArgNumber(node.functionName, 2, node.args.size)
-                    val fst = takeString(interpret(node.args[0])).toString()
-                    val snd = takeString(interpret(node.args[1])).toString()
-                    return Val.Str(fst + snd)
-                }
-                "strcmp" -> {
-                    assertArgNumber(node.functionName, 2, node.args.size)
-                    val fst = takeString(interpret(node.args[0])).toString()
-                    val snd = takeString(interpret(node.args[1])).toString()
-                    return Val.Number(fst.compareTo(snd))
-                }
-                "strmake" -> {
-                    assertArgNumber(node.functionName, 2, node.args.size)
-                    val numberOfChars = takeInt(interpret(node.args[0]))
-                    val char = takeChar(interpret(node.args[1]))
-                    return Val.Str(char.toString().repeat(numberOfChars))
-                }
-                "Arrmake" -> return performArrMake(node)
-                "arrmake" -> return performArrMake(node)
-                "arrlen" -> {
-                    assertArgNumber(node.functionName, 1, node.args.size)
-                    val value = interpret(node.args[0]);
-                    val array = value as? Val.Array ?: throw IllegalStateException("An argument of arrlen must be an array; found ${value::class.simpleName}")
-                    return Val.Number(array.content.size)
-                }
+            when (node) {
+                is AST.FunctionCall.BuiltIn -> performBuiltIn() //TODO: pop args, pass to function, push result
                 else -> {
-                    stack += StackOp.Comm("Call ${node.functionName}")
-                    stack += StackOp.Call(node.functionName, node.args.size)
+                    stack += StackOp.Comm("Call ${node.name}")
+                    stack += StackOp.Call(node.name, node.args.size)
                 }
             }
         }

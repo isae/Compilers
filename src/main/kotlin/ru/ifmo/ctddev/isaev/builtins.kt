@@ -143,7 +143,7 @@ fun builtInWrite(arg: Val, writer: PrintWriter): Unit {
     ++write_count
 }
 
-fun performBuiltIn(tag: BuiltInTag, reader: BufferedReader, writer: PrintWriter, vararg args: Val): Val {
+fun performBuiltIn(tag: BuiltInTag, reader: BufferedReader, writer: PrintWriter, args: List<Val>): Val {
     assertArgNumber(tag.toString(), tag.argSize, args.size)
     return when (tag) {
         BuiltInTag.READ -> builtInRead(reader)

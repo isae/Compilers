@@ -63,6 +63,7 @@ sealed class AST {
         class Mod(l: AST, r: AST) : Binary(l, r, "%")
         //
         class Eq(l: AST, r: AST) : Binary(l, r, "==")
+
         class Neq(l: AST, r: AST) : Binary(l, r, "!=")
         class Lesser(l: AST, r: AST) : Binary(l, r, "<")
         class Greater(l: AST, r: AST) : Binary(l, r, ">")
@@ -70,8 +71,11 @@ sealed class AST {
         class Geq(l: AST, r: AST) : Binary(l, r, ">=")
     }
 
-    class FunctionCall(val functionName: String, val args: List<AST>) : AST()
-    class BuiltIn(val args: List<AST>, val tag: BuiltInTag);
+    sealed class FunctionCall(val name: String, val args: List<AST>) : AST() {
+        class BuiltIn(name: String, args: List<AST>, val tag: BuiltInTag) : FunctionCall(name, args)
+        class UserDefined(name: String, args: List<AST>) : FunctionCall(name, args)
+    }
+
     class FunctionDef(val functionName: String, val argNames: List<String>, val body: List<AST>) : AST()
     class Program(val functions: List<FunctionDef>, val statements: List<AST>) : AST()
     class Conditional(val expr: AST, val ifTrue: List<AST>, val elifs: List<Elif>, val ifFalse: List<AST>) : AST()
