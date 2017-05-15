@@ -3,67 +3,6 @@ package ru.ifmo.ctddev.isaev
 /**
  * @author iisaev
  */
-
-fun apply(l: Val, r: Val, op: AST.Binary): Int {
-    if (op.intOnly) {
-        return apply(takeInt(l), takeInt(r), op.op)
-    } else {
-        if (l is Val.Character && r is Val.Character) {
-            return apply(l.value, r.value, op.op)
-        } else if (l is Val.Str && r is Val.Str) {
-            return apply(l.value.toString(), r.value.toString(), op.op)
-        } else if (l is Val.Number && r is Val.Number) {
-            return apply(l.value, r.value, op.op)
-        } else {
-            throw IllegalStateException("Apply of operation ${op.op} is not supported for ${l::class.simpleName} and ${r::class.simpleName}")
-        }
-    }
-}
-
-fun apply(l: Int, r: Int, op: String): Int {
-    return when (op) {
-        "+" -> l + r
-        "-" -> l - r
-        "*" -> l * r
-        "/" -> l / r
-        "%" -> l % r
-        "&" -> if (l != 0 && r != 0) 1 else 0
-        "|" -> if (l == 0 && r == 0) 0 else 1
-        "!!" -> if ((l == 0) == (r == 0)) 0 else 1
-        "==" -> if (l == r) 1 else 0
-        "!=" -> if (l != r) 1 else 0
-        ">" -> if (l > r) 1 else 0
-        ">=" -> if (l >= r) 1 else 0
-        "<" -> if (l < r) 1 else 0
-        "<=" -> if (l <= r) 1 else 0
-        else -> TODO("Invalid operation $op for $l and $r")
-    }
-}
-
-fun apply(l: String, r: String, op: String): Int {
-    return when (op) {
-        "==" -> if (l == r) 1 else 0
-        "!=" -> if (l != r) 1 else 0
-        ">" -> if (l > r) 1 else 0
-        ">=" -> if (l >= r) 1 else 0
-        "<" -> if (l < r) 1 else 0
-        "<=" -> if (l <= r) 1 else 0
-        else -> TODO("Invalid operation $op for $l and $r")
-    }
-}
-
-fun apply(l: Char, r: Char, op: String): Int {
-    return when (op) {
-        "==" -> if (l == r) 1 else 0
-        "!=" -> if (l != r) 1 else 0
-        ">" -> if (l > r) 1 else 0
-        ">=" -> if (l >= r) 1 else 0
-        "<" -> if (l < r) 1 else 0
-        "<=" -> if (l <= r) 1 else 0
-        else -> TODO("Invalid operation $op for $l and $r")
-    }
-}
-
 sealed class Val {
     class Void : Val() {
         override fun copy(): Val {
@@ -114,21 +53,21 @@ sealed class AST {
         class Index(name: String, val indexes: List<AST>) : Variable(name)
     }
 
-    sealed class Binary(val left: AST, val right: AST, val op: String, val intOnly: Boolean) : AST() {
-        class Add(l: AST, r: AST) : Binary(l, r, "+", true)
-        class Sub(l: AST, r: AST) : Binary(l, r, "-", true)
-        class Mul(l: AST, r: AST) : Binary(l, r, "*", true)
-        class And(l: AST, r: AST) : Binary(l, r, "&", true)
-        class Or(l: AST, r: AST) : Binary(l, r, "|", true)
-        class Xor(l: AST, r: AST) : Binary(l, r, "|", true)
-        class Div(l: AST, r: AST) : Binary(l, r, "/", true)
-        class Mod(l: AST, r: AST) : Binary(l, r, "%", true)
-        class Eq(l: AST, r: AST) : Binary(l, r, "==", false)
-        class Neq(l: AST, r: AST) : Binary(l, r, "!=", false)
-        class Lesser(l: AST, r: AST) : Binary(l, r, "<", false)
-        class Greater(l: AST, r: AST) : Binary(l, r, ">", false)
-        class Leq(l: AST, r: AST) : Binary(l, r, "<=", false)
-        class Geq(l: AST, r: AST) : Binary(l, r, ">=", false)
+    sealed class Binary(val left: AST, val right: AST, val op: String) : AST() {
+        class Add(l: AST, r: AST) : Binary(l, r, "+")
+        class Sub(l: AST, r: AST) : Binary(l, r, "-")
+        class Mul(l: AST, r: AST) : Binary(l, r, "*")
+        class And(l: AST, r: AST) : Binary(l, r, "&")
+        class Or(l: AST, r: AST) : Binary(l, r, "|")
+        class Div(l: AST, r: AST) : Binary(l, r, "/")
+        class Mod(l: AST, r: AST) : Binary(l, r, "%")
+        //
+        class Eq(l: AST, r: AST) : Binary(l, r, "==")
+        class Neq(l: AST, r: AST) : Binary(l, r, "!=")
+        class Lesser(l: AST, r: AST) : Binary(l, r, "<")
+        class Greater(l: AST, r: AST) : Binary(l, r, ">")
+        class Leq(l: AST, r: AST) : Binary(l, r, "<=")
+        class Geq(l: AST, r: AST) : Binary(l, r, ">=")
     }
 
     class FunctionCall(val functionName: String, val args: List<AST>) : AST()

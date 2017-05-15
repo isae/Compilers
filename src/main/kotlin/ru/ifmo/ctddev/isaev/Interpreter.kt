@@ -58,7 +58,7 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                         apply(
                                 interpret(node.left),
                                 interpret(node.right),
-                                node
+                                node.op
                         )
                 )
                 is AST.FunctionCall -> {
