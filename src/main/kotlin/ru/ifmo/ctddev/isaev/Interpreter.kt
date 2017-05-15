@@ -97,8 +97,8 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                             assertArgNumber(node.functionName, 3, node.args.size)
                             val str = takeString(interpret(node.args[0]))
                             val from = takeInt(interpret(node.args[1]))
-                            val to = takeInt(interpret(node.args[2]))
-                            return Val.Str(str.substring(from, to))
+                            val length = takeInt(interpret(node.args[2]))
+                            return Val.Str(str.substring(from, from + length))
                         }
                         "strdup" -> {
                             assertArgNumber(node.functionName, 1, node.args.size)
