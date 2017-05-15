@@ -71,6 +71,7 @@ sealed class AST {
     }
 
     class FunctionCall(val functionName: String, val args: List<AST>) : AST()
+    class BuiltIn(val args: List<AST>, val tag: BuiltInTag);
     class FunctionDef(val functionName: String, val argNames: List<String>, val body: List<AST>) : AST()
     class Program(val functions: List<FunctionDef>, val statements: List<AST>) : AST()
     class Conditional(val expr: AST, val ifTrue: List<AST>, val elifs: List<Elif>, val ifFalse: List<AST>) : AST()

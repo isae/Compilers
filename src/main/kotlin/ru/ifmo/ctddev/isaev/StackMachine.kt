@@ -11,15 +11,9 @@ import kotlin.collections.HashSet
 
 
 sealed class StackOp {
-    class Read : StackOp() {
+    class BuiltIn(val tag: BuiltInTag) : StackOp() {
         override fun toString(): String {
-            return "READ"
-        }
-    }
-
-    class Write : StackOp() {
-        override fun toString(): String {
-            return "WRITE"
+            return tag.toString()
         }
     }
 
@@ -136,17 +130,73 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             stack += StackOp.Binop(node.op)
         }
         is AST.FunctionCall -> {
+            node.args.reversed().forEach { compile(it, stack) }
             when (node.functionName) {
-                "read" -> stack += StackOp.Read()
+                "read" -> stack += perStackOp.BuiltIn.Read()
                 "write" -> {
                     if (node.args.size != 1) {
                         TODO("Vararg write")
                     }
                     compile(node.args[0], stack)
-                    stack += StackOp.Write()
+                    stack += StackOp.BuiltIn.Write()
+                }
+                "strlen" -> {
+                    assertArgNumber(node.functionName, 1, node.args.size)
+                    val value = takeString(interpret(node.args[0]))
+                    return Val.Number(value.length)
+                }
+                "strget" -> {
+                    assertArgNumber(node.functionName, 2, node.args.size)
+                    val str = takeString(interpret(node.args[0]))
+                    val index = takeInt(interpret(node.args[1]))
+                    return Val.Character(str[index])
+                }
+                "strset" -> {
+                    assertArgNumber(node.functionName, 3, node.args.size)
+                    val str = takeString(interpret(node.args[0]))
+                    val index = takeInt(interpret(node.args[1]))
+                    val char = takeChar(interpret(node.args[2]))
+                    str[index] = char
+                    return Val.Void()
+                }
+                "strsub" -> {
+                    assertArgNumber(node.functionName, 3, node.args.size)
+                    val str = takeString(interpret(node.args[0]))
+                    val from = takeInt(interpret(node.args[1]))
+                    val length = takeInt(interpret(node.args[2]))
+                    return Val.Str(str.substring(from, from + length))
+                }
+                "strdup" -> {
+                    assertArgNumber(node.functionName, 1, node.args.size)
+                    return Val.Str(takeString(interpret(node.args[0])).toString())
+                }
+                "strcat" -> {
+                    assertArgNumber(node.functionName, 2, node.args.size)
+                    val fst = takeString(interpret(node.args[0])).toString()
+                    val snd = takeString(interpret(node.args[1])).toString()
+                    return Val.Str(fst + snd)
+                }
+                "strcmp" -> {
+                    assertArgNumber(node.functionName, 2, node.args.size)
+                    val fst = takeString(interpret(node.args[0])).toString()
+                    val snd = takeString(interpret(node.args[1])).toString()
+                    return Val.Number(fst.compareTo(snd))
+                }
+                "strmake" -> {
+                    assertArgNumber(node.functionName, 2, node.args.size)
+                    val numberOfChars = takeInt(interpret(node.args[0]))
+                    val char = takeChar(interpret(node.args[1]))
+                    return Val.Str(char.toString().repeat(numberOfChars))
+                }
+                "Arrmake" -> return performArrMake(node)
+                "arrmake" -> return performArrMake(node)
+                "arrlen" -> {
+                    assertArgNumber(node.functionName, 1, node.args.size)
+                    val value = interpret(node.args[0]);
+                    val array = value as? Val.Array ?: throw IllegalStateException("An argument of arrlen must be an array; found ${value::class.simpleName}")
+                    return Val.Number(array.content.size)
                 }
                 else -> {
-                    node.args.reversed().forEach { compile(it, stack) }
                     stack += StackOp.Comm("Call ${node.functionName}")
                     stack += StackOp.Call(node.functionName, node.args.size)
                 }
@@ -329,8 +379,8 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
         while (ip < operations.size) {
             val it = operations[ip]
             when (it) {
-                is StackOp.Read -> push(builtInRead(reader))
-                is StackOp.Write -> builtInWrite(pop(), writer)
+                is StackOp.BuiltIn.Read -> push(builtInRead(reader))
+                is StackOp.BuiltIn.Write -> builtInWrite(pop(), writer)
                 is StackOp.Nop -> {
                 }
                 is StackOp.Label -> {

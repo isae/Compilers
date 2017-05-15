@@ -7,6 +7,12 @@ import java.io.PrintWriter
  * @author iisaev
  */
 
+enum class BuiltInTag(val argSize: Int) {
+    READ(0), WRITE(1), STRLEN(1),
+    STRGET(2), STRSET(3), STRSUB(3),
+    STRDUP(1), STRCAT(2), STRCMP(2),
+    STRMAKE(2), ARRMAKE(2), ARRLEN(1)
+}
 
 fun apply(l: Val, r: Val, op: String): Int {
     if (listOf("+", "-", "*", "&", "|", "/", "%").contains(op)) {
@@ -135,4 +141,69 @@ fun builtInWrite(arg: Val, writer: PrintWriter): Unit {
     writer.println(printPrefix() + value)
     writer.flush()
     ++write_count
+}
+
+fun performBuiltIn(tag: BuiltInTag, reader: BufferedReader, writer: PrintWriter, vararg args: Val): Val {
+    assertArgNumber(tag.toString(), tag.argSize, args.size)
+    return when (tag) {
+        BuiltInTag.READ -> builtInRead(reader)
+        BuiltInTag.WRITE -> {
+            args.forEach { builtInWrite(it, writer) }
+            return Val.Void()
+        }
+        BuiltInTag.STRLEN -> {
+            val value = takeString(args[0])
+            return Val.Number(value.length)
+        }
+        BuiltInTag.STRGET -> {
+            val str = takeString(args[0])
+            val index = takeInt(args[1])
+            return Val.Character(str[index])
+        }
+        BuiltInTag.STRSET -> {
+            val str = takeString(args[0])
+            val index = takeInt(args[1])
+            val char = takeChar(args[2])
+            str[index] = char
+            return Val.Void()
+        }
+        BuiltInTag.STRSUB -> {
+            val str = takeString(args[0])
+            val from = takeInt(args[1])
+            val length = takeInt(args[2])
+            return Val.Str(str.substring(from, from + length))
+        }
+        BuiltInTag.STRDUP -> {
+            return Val.Str(takeString(args[0]).toString())
+        }
+        BuiltInTag.STRCAT -> {
+            val fst = takeString(args[0]).toString()
+            val snd = takeString(args[1]).toString()
+            return Val.Str(fst + snd)
+        }
+        BuiltInTag.STRCMP -> {
+            val fst = takeString(args[0]).toString()
+            val snd = takeString(args[1]).toString()
+            return Val.Number(fst.compareTo(snd))
+        }
+        BuiltInTag.STRMAKE -> {
+            val numberOfChars = takeInt(args[0])
+            val char = takeChar(args[1])
+            return Val.Str(char.toString().repeat(numberOfChars))
+        }
+        BuiltInTag.ARRMAKE -> {
+            val size = takeInt(args[0])
+            val value = args[1]
+            val result = ArrayList<Val>()
+            repeat(size, {
+                result.add(value.copy())
+            })
+            return Val.Array(result)
+        }
+        BuiltInTag.ARRLEN -> {
+            val value = args[0];
+            val array = value as? Val.Array ?: throw IllegalStateException("An argument of arrlen must be an array; found ${value::class.simpleName}")
+            return Val.Number(array.content.size)
+        }
+    }
 }
