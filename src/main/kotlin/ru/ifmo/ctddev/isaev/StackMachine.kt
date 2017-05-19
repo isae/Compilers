@@ -6,6 +6,7 @@ import java.io.OutputStreamWriter
 import java.io.PrintWriter
 import java.math.BigInteger
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
@@ -132,8 +133,8 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
         is AST.FunctionCall -> {
             node.args.reversed().forEach { compile(it, stack) }
             when (node) {
-                is AST.FunctionCall.BuiltIn -> performBuiltIn() //TODO: pop args, pass to function, push result
-                else -> {
+                is AST.FunctionCall.BuiltIn -> stack += StackOp.BuiltIn(node.tag)
+                is AST.FunctionCall.UserDefined -> {
                     stack += StackOp.Comm("Call ${node.name}")
                     stack += StackOp.Call(node.name, node.args.size)
                 }
@@ -316,8 +317,13 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
         while (ip < operations.size) {
             val it = operations[ip]
             when (it) {
-                is StackOp.BuiltIn.Read -> push(builtInRead(reader))
-                is StackOp.BuiltIn.Write -> builtInWrite(pop(), writer)
+                is StackOp.BuiltIn -> {
+                    val args = ArrayList<Val>()
+                    repeat(it.tag.argSize, {
+                        args += pop()
+                    })
+                    push(performBuiltIn(it.tag, reader, writer, args))
+                }
                 is StackOp.Nop -> {
                 }
                 is StackOp.Label -> {

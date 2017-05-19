@@ -71,9 +71,9 @@ sealed class AST {
         class Geq(l: AST, r: AST) : Binary(l, r, ">=")
     }
 
-    sealed class FunctionCall(val name: String, val args: List<AST>) : AST() {
-        class BuiltIn(name: String, args: List<AST>, val tag: BuiltInTag) : FunctionCall(name, args)
-        class UserDefined(name: String, args: List<AST>) : FunctionCall(name, args)
+    sealed class FunctionCall(val args: List<AST>) : AST() {
+        class BuiltIn(val tag: BuiltInTag, args: List<AST>) : FunctionCall(args)
+        class UserDefined(val name: String, args: List<AST>) : FunctionCall(args)
     }
 
     class FunctionDef(val functionName: String, val argNames: List<String>, val body: List<AST>) : AST()

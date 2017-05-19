@@ -171,10 +171,29 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
     }
 
     override fun visitFunctionCall(ctx: LangParser.FunctionCallContext?): AST.FunctionCall {
-        return AST.FunctionCall(
-                ctx!!.getChild(0).text,
-                visitArgs(ctx.argList())
-        )
+        val functionName = ctx!!.getChild(0).text ?: throw IllegalStateException("Null funciton name")
+        val builtInTag = when (functionName) {
+            "read" -> BuiltInTag.READ
+            "write" -> BuiltInTag.WRITE
+            "strlen" -> BuiltInTag.STRLEN
+            "strget" -> BuiltInTag.STRGET
+            "strset" -> BuiltInTag.STRSET
+            "strsub" -> BuiltInTag.STRSUB
+            "strdup" -> BuiltInTag.STRDUP
+            "strcat" -> BuiltInTag.STRCAT
+            "strcmp" -> BuiltInTag.STRCMP
+            "strmake" -> BuiltInTag.STRMAKE
+            "arrmake" -> BuiltInTag.ARRMAKE
+            "Arrmake" -> BuiltInTag.ARRMAKE
+            "arrlen" -> BuiltInTag.ARRLEN
+            else -> null
+        }
+        val args = visitArgs(ctx.argList())
+        return if (builtInTag == null) {
+            AST.FunctionCall.UserDefined(functionName, args)
+        } else {
+            AST.FunctionCall.BuiltIn(builtInTag, args)
+        }
     }
 
     override fun visitFunctionDef(ctx: LangParser.FunctionDefContext?): AST.FunctionDef {

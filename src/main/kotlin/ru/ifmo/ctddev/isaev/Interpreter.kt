@@ -14,7 +14,11 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
 
     fun interpret(node: AST, ctx: MutableMap<String, Val>, funCtx: MutableMap<String, AST.FunctionDef>): Val {
         fun performArrMake(node: AST.FunctionCall): Val.Array {
-            assertArgNumber(node.name, 2, node.args.size)
+            val name = when (node) {
+                is AST.FunctionCall.UserDefined -> node.name
+                is AST.FunctionCall.BuiltIn -> node.tag.toString()
+            }
+            assertArgNumber(name, 2, node.args.size)
             val size = takeInt(interpret(node.args[0], ctx, funCtx))
             val value = interpret(node.args[1], ctx, funCtx)
             val result = ArrayList<Val>()
@@ -69,7 +73,7 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                         }
                     }
                     return when (node) {
-                        is AST.FunctionCall.BuiltIn -> performBuiltIn(node.tag, reader,writer, callArgs)
+                        is AST.FunctionCall.BuiltIn -> performBuiltIn(node.tag, reader, writer, callArgs)
                         is AST.FunctionCall.UserDefined -> {
                             val function = funCtx[node.name] ?: throw IllegalStateException("Invalid function name: ${node.name}")
                             val localCtx = HashMap<String, Val>()
