@@ -36,9 +36,27 @@ sealed class StackOp {
         }
     }
 
+    class LdArr(val arg: String, val indexes: Int) : StackOp() {
+        override fun toString(): String {
+            return "LD_ARR $arg $indexes"
+        }
+    }
+
+    class MakeArr(val size: Int) : StackOp() {
+        override fun toString(): String {
+            return "MAKE_ARR $size"
+        }
+    }
+
     class St(val arg: String) : StackOp() {
         override fun toString(): String {
             return "ST $arg"
+        }
+    }
+
+    class StArr(val arg: String, val indexes: Int) : StackOp() {
+        override fun toString(): String {
+            return "ST_ARR $arg $indexes"
         }
     }
 
@@ -118,8 +136,18 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
     when (node) {
         is AST.Skip -> {
         }
+        is AST.Array -> {
+            node.content.forEach {
+                compile(it, stack)
+            }
+            stack += StackOp.MakeArr(node.content.size)
+        }
         is AST.Const -> stack += StackOp.Push(node.value)
-        is AST.Variable -> stack += StackOp.Ld(node.name)
+        is AST.Variable.Simple -> stack += StackOp.Ld(node.name)
+        is AST.Variable.Index -> {
+            compile(node.indexes, stack)
+            stack += StackOp.LdArr(node.name, node.indexes.size)
+        }
         is AST.UnaryMinus -> { // -a == 0-a
             stack += StackOp.Push(Val.Number(0))
             compile(node.arg, stack)
@@ -183,7 +211,14 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
         }
         is AST.Assignment -> {
             compile(node.toAssign, stack)
-            stack += StackOp.St(node.variable.name)
+            when (node.variable) {
+                is AST.Variable.Simple -> stack += StackOp.St(node.variable.name)
+                is AST.Variable.Index -> {
+                    val variable = node.variable
+                    compile(variable.indexes, stack)
+                    stack += StackOp.StArr(variable.name, variable.indexes.size)
+                }
+            }
         }
         is AST.WhileLoop -> {
             val startLabel = getRandomLabel()
@@ -314,6 +349,19 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
             }
         }
         var ip = labels["_main"] ?: throw IllegalStateException("No such label: main")
+
+        fun followIndexes(size: Int, name: String): Pair<Int, Val.Array> {
+            val indexes = ArrayList<Int>()
+            repeat(size, {
+                indexes += takeInt(pop())
+            })
+            var array = memory["$funPrefix.$name"] as Val.Array
+            indexes.dropLast(1).forEach {
+                array = array.content[it] as Val.Array
+            }
+            return Pair(indexes.last(), array)
+        }
+
         while (ip < operations.size) {
             val it = operations[ip]
             when (it) {
@@ -339,7 +387,18 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                     val value = memory["$funPrefix.${it.arg}"] ?: throw IllegalStateException("No such variable $it.arg")
                     push(value)
                 }
-                is StackOp.St -> memory["$funPrefix.${it.arg}"] = pop()
+                is StackOp.St -> {
+                    memory["$funPrefix.${it.arg}"] = pop()
+                }
+                is StackOp.StArr -> {
+                    val (index, array) = followIndexes(it.indexes, it.arg)
+                    val value = pop()
+                    array.content[index] = value
+                }
+                is StackOp.LdArr -> {
+                    val (index, array) = followIndexes(it.indexes, it.arg)
+                    push(array.content[index])
+                }
                 is StackOp.Binop -> {
                     val right = pop()
                     val left = pop()
@@ -350,6 +409,13 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                     if (condition == 0) {
                         ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
                     }
+                }
+                is StackOp.MakeArr -> {
+                    val array = ArrayList<Val>()
+                    repeat(it.size, {
+                      array += pop()  
+                    })
+                    push(Val.Array(array.asReversed()))
                 }
                 is StackOp.Jump -> {
                     ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")

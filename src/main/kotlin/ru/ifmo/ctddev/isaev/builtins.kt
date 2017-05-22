@@ -201,7 +201,7 @@ fun performBuiltIn(tag: BuiltInTag, reader: BufferedReader, writer: PrintWriter,
             return Val.Array(result)
         }
         BuiltInTag.ARRLEN -> {
-            val value = args[0];
+            val value = args[0]
             val array = value as? Val.Array ?: throw IllegalStateException("An argument of arrlen must be an array; found ${value::class.simpleName}")
             return Val.Number(array.content.size)
         }
