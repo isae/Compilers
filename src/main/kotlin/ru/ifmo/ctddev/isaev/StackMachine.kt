@@ -322,7 +322,10 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                     repeat(it.tag.argSize, {
                         args += pop()
                     })
-                    push(performBuiltIn(it.tag, reader, writer, args))
+                    val res = performBuiltIn(it.tag, reader, writer, args)
+                    if (res !is Val.Void) {
+                        push(res)
+                    }
                 }
                 is StackOp.Nop -> {
                 }
