@@ -5,17 +5,19 @@ import org.antlr.v4.runtime.CommonTokenStream
 import ru.ifmo.ctddev.isaev.parser.LangLexer
 import ru.ifmo.ctddev.isaev.parser.LangParser
 import java.io.File
+import java.io.PrintWriter
 
 
 fun main(args: Array<String>) {
     val option = args[0]
     val fileName = args[1]
-    val programText = File(fileName).readText()
+    val file = File(fileName)
+    val programText = file.readText()
     val program = buildAST(programText)
     when (option) {
         "-i" -> runInterpreter(program)
         "-s" -> runStackMachine(program)
-        "-o" -> compileToASM(program)
+        "-o" -> compileToASM(program, file)
     }
 }
 
@@ -37,8 +39,10 @@ fun runStackMachine(program: AST) {
     StackMachine().run(compiledSTM)
 }
 
-fun compileToASM(program: AST) {
+fun compileToASM(program: AST, file: File) {
     val compiledSTM = compile(program)
     val asmCode = compile(compiledSTM)
-    asmCode.forEach(::println)
+    PrintWriter("${file.parentFile.absolutePath}/out/${file.name}.asm").use {
+        asmCode.forEach(it::println)
+    }
 }
