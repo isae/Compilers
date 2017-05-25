@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
     when (option) {
         "-i" -> runInterpreter(program)
         "-s" -> runStackMachine(program)
-        "-o" -> compileToASM(program, file)
+        "-o" -> compileToASM(program, file.absoluteFile)
     }
 }
 
@@ -42,7 +42,9 @@ fun runStackMachine(program: AST) {
 fun compileToASM(program: AST, file: File) {
     val compiledSTM = compile(program)
     val asmCode = compile(compiledSTM)
-    PrintWriter("${file.parentFile.absolutePath}/out/${file.name}.asm").use {
-        asmCode.forEach(it::println)
+    println("File to compile: ${file.absolutePath}")
+    println("Parent directory: ${file.parentFile.absolutePath}")
+    PrintWriter("${file.parentFile.absolutePath}/out/${file.name}.asm").use { writer ->
+        asmCode.forEach { writer.println(it)}
     }
 }

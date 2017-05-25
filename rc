@@ -1,8 +1,20 @@
 #!/bin/bash
 BASEDIR=$(dirname "$0")
-rmdir ./out 
+BASEDIR="`cd "${BASEDIR}";pwd`"
+echo "Base directory ${BASEDIR}" 
+WORKING_DIR=$(pwd)
+echo "Working directory ${WORKING_DIR}" 
+rm -rf ./out 
 mkdir ./out
-mvn clean package -DskipTests -f ../../
+VAR=${BASEDIR}/target/compilers-1.0-SNAPSHOT-jar-with-dependencies.jar
+LIB_JAR=${BASEDIR}/target/compilers-1.0-SNAPSHOT-jar-with-dependencies.jar
+echo "Library path is ${LIB_JAR}" 
+
+if [ ! -f ${LIB_JAR} ]; then
+    echo "Building a jar"
+    mvn clean package -DskipTests -f ${BASEDIR}
+fi
+
 java -jar ${BASEDIR}/target/compilers-1.0-SNAPSHOT-jar-with-dependencies.jar "$1" "$2"
 if [ "$1" == "-o" ]; then
     ${BASEDIR}/compile.sh "$2"

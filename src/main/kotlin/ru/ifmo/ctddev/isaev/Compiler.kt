@@ -143,8 +143,9 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         is StackOp.Comm -> {
             ops /= ";${op.comment}"
         }
-        is StackOp.Push -> {
-            ops /= "push ${op.arg}"
+        is StackOp.Push -> when (op.arg) {
+            is Val.Number -> ops /= "push ${op.arg.value}"
+            else -> TODO("Only Integer are implemented for now")
         }
         is StackOp.Ld -> {
             ops /= "push dword [${op.arg}]"
