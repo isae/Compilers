@@ -118,7 +118,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                     ops /= "clib_prolog 16"
                     ops /= "mov dword [esp+4], int_read"
                     ops /= "mov dword [esp], format_in"
-                    ops /= "call _scanf"
+                    ops /= "call scanf"
                     ops /= "clib_epilog 16"
                     ops /= "push dword [int_read]"
                 }
@@ -127,7 +127,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                     ops /= "clib_prolog 16"
                     ops /= "mov dword [esp+4], eax"
                     ops /= "mov dword [esp], format_out"
-                    ops /= "call _printf"
+                    ops /= "call printf"
                     ops /= "clib_epilog 16"
                 }
                 else -> TODO("Not implemented")
