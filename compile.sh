@@ -6,5 +6,5 @@ echo "Working directory ${WORKING_DIR}"
 FILENAME=$(basename "$1")
 FILENAME="${FILENAME%.*}"
 FILENAME=${OUT}/${FILENAME}
-nasm -f elf32 -F dwarf -g ${OUT}/${name}.asm -o ${FILENAME}.o  && gcc -m32 -g -O0 -o ${FILENAME} ${FILENAME}.o
+nasm -f elf32 -F dwarf -g ${OUT}/${name}.asm -o ${FILENAME}.o  && gcc -m32 -lc -g -e -o ${FILENAME} ${FILENAME}.o -Wl,-e,main 
 ${FILENAME}
