@@ -4,7 +4,7 @@ BASEDIR="`cd "${BASEDIR}";pwd`"
 echo "Base directory ${BASEDIR}" 
 WORKING_DIR=$(pwd)
 echo "Working directory ${WORKING_DIR}" 
-rm -rf ./out 
+rm -rf ./out/* 
 mkdir ./out
 VAR=${BASEDIR}/target/compilers-1.0-SNAPSHOT-jar-with-dependencies.jar
 LIB_JAR=${BASEDIR}/target/compilers-1.0-SNAPSHOT-jar-with-dependencies.jar
