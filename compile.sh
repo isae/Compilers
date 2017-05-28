@@ -7,5 +7,5 @@ FILENAME=$(basename "$1")
 FILENAME="${FILENAME%.*}"
 FILENAME=${OUT}/${FILENAME}
 nasm -f elf32 ${OUT}/${name}.asm -o ${FILENAME}.o 
-gcc -m32 -lc -o ${FILENAME} ${FILENAME}.o -Wl,-e,main 
+gcc -m32 -lc -o ${FILENAME} ${FILENAME}.o 
 ${FILENAME}
