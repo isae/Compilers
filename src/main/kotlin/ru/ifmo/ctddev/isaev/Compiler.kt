@@ -19,13 +19,12 @@ mov esp, ebx
     """
 
 val externs = """
-extern _printf
-extern _scanf
-extern _gets
+extern printf
+extern scanf
 """
 val prefix = """
 SECTION .text
-GLOBAL _main
+GLOBAL main
     """
 
 val rodata = """
