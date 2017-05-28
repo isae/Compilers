@@ -34,7 +34,7 @@ format_out: db "%d", 10, 0
 """
 
 val suffix = """
-    mov eax, 0
+    mov eax, 1
     ret
 """
 
