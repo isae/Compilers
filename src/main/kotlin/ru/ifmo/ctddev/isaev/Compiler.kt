@@ -5,39 +5,19 @@ import ru.ifmo.ctddev.isaev.data.StackOp
 import ru.ifmo.ctddev.isaev.data.Val
 import java.util.*
 
-val macros = """
-%macro clib_prolog 1
-mov esp, ebx 
-and 0xFFFFFFF0, esp
-sub 12, esp    
-push ebx         
-sub %1, esp
-%endmacro
-
-%macro clib_epilog 1
-add %1, esp
-pop ebx        
-mov ebx, esp
-%endmacro
-    """
-
-val externs = """
-extern printf
-extern scanf
-"""
 val prefix = """
-SECTION .text
-GLOBAL main
+.section __TEXT,__text
+.globl _main
     """
 
 val rodata = """
-SECTION .rodata
-format_in: db "%d", 0
-format_out: db "%d", 10, 0
+.section __TEXT,__cstring,cstring_literals
+format_in: .asciz "%d"
+format_out: .asciz "%d\n"
 """
 
 val suffix = """
-    mov 1, eax
+    mov $1, %eax
     ret
 """
 
@@ -48,15 +28,12 @@ private fun compile(node: StackOp): List<String> {
 }
 
 fun compile(nodes: List<StackOp>): List<String> {
-
     val ops = ArrayList<String>()
-    ops += macros
-    ops += externs
     ops += rodata
     val localVars = nodes.filter { it is StackOp.St }.map { (it as StackOp.St).arg }.distinct()
-    ops += "SECTION .data"
-    ops /= "int_read: dd 0"
-    localVars.forEach { ops /= "$it: dd 0" }
+    ops += ".data"
+    ops /= "int_read: .int 0"
+    localVars.forEach { ops /= "$it: .int 0" }
     ops += prefix
     compile(nodes, ops)
     ops += suffix
@@ -73,20 +50,20 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         is StackOp.BuiltIn -> {
             when {
                 op.tag == BuiltInTag.READ -> {
-                    ops /= "clib_prolog 16"
-                    ops /= "mov int_read, dword [esp+4]"
-                    ops /= "mov format_in, dword [esp]"
-                    ops /= "call scanf"
-                    ops /= "clib_epilog 16"
-                    ops /= "push dword [int_read]"
+                    ops /= "/* align to 16 prolog */"
+                    ops /= "movl int_read(,1), +4(%esp)"
+                    ops /= "movl format_in(,1), (%esp)"
+                    ops /= "call _scanf"
+                    ops /= "/* align to 16 epilog */"
+                    ops /= "push (int_read)"
                 }
                 op.tag == BuiltInTag.WRITE -> {
                     ops /= "pop eax"
-                    ops /= "clib_prolog 16"
-                    ops /= "mov eax, dword [esp+4]"
-                    ops /= "mov format_out, dword [esp]"
-                    ops /= "call printf"
-                    ops /= "clib_epilog 16"
+                    ops /= "/* align to 16 prolog */"
+                    ops /= "mov %eax, +4(%esp)"
+                    ops /= "movl format_out(,1), (%esp)"
+                    ops /= "call _printf"
+                    ops /= "/*  align to 16 epilog */"
                 }
                 else -> TODO("Not implemented")
             }
@@ -105,95 +82,95 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             else -> TODO("Only Integer are implemented for now")
         }
         is StackOp.Ld -> {
-            ops /= "push dword [${op.arg}]"
+            ops /= "push (${op.arg})"
         }
         is StackOp.St -> {
-            ops /= "pop eax"
-            ops /= "mov eax, [${op.arg}]"
+            ops /= "pop %eax"
+            ops /= "mov %eax, (${op.arg})"
         }
         is StackOp.Binop -> {
             when (op.op) {
                 "*" -> {
-                    ops /= "pop eax"
-                    ops /= "pop edx"
-                    ops /= "mul edx"
-                    ops /= "push eax"
+                    ops /= "pop %eax"
+                    ops /= "pop %edx"
+                    ops /= "mul %edx"
+                    ops /= "push %eax"
                 }
                 "+" -> {
-                    ops /= "pop eax"
-                    ops /= "pop edx"
-                    ops /= "add edx, eax"
-                    ops /= "push eax"
+                    ops /= "pop %eax"
+                    ops /= "pop %edx"
+                    ops /= "add %edx, %eax"
+                    ops /= "push %eax"
                 }
                 "-" -> {
-                    ops /= "pop edx"
-                    ops /= "pop eax"
-                    ops /= "sub edx, eax"
-                    ops /= "push eax"
+                    ops /= "pop %edx"
+                    ops /= "pop %eax"
+                    ops /= "sub %edx, %eax"
+                    ops /= "push %eax"
                 }
                 "/" -> {
-                    ops /= "xor edx, edx"
-                    ops /= "pop ecx"
-                    ops /= "pop eax"
-                    ops /= "div ecx"
-                    ops /= "push eax"
+                    ops /= "xor %edx, %edx"
+                    ops /= "pop %ecx"
+                    ops /= "pop %eax"
+                    ops /= "div %ecx"
+                    ops /= "push %eax"
                 }
                 "%" -> {
-                    ops /= "xor edx, edx"
-                    ops /= "pop ecx"
-                    ops /= "pop eax"
-                    ops /= "div ecx"
-                    ops /= "push edx"
+                    ops /= "xor %edx, %edx"
+                    ops /= "pop %ecx"
+                    ops /= "pop %eax"
+                    ops /= "div %ecx"
+                    ops /= "push %edx"
                 }
                 "<" -> {
-                    ops /= "pop edx"
-                    ops /= "pop eax"
-                    ops /= "cmp edx, eax" //compare and set flags
+                    ops /= "pop %edx"
+                    ops /= "pop %eax"
+                    ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jl $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
                     ops /= "push 1"
                 }
                 "<=" -> {
-                    ops /= "pop edx"
-                    ops /= "pop eax"
-                    ops /= "cmp edx, eax" //compare and set flags
+                    ops /= "pop %edx"
+                    ops /= "pop %eax"
+                    ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jle $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
                     ops /= "push 1"
                 }
                 ">" -> {
-                    ops /= "pop eax"
-                    ops /= "pop edx"
-                    ops /= "cmp edx, eax" //compare and set flags
+                    ops /= "pop %eax"
+                    ops /= "pop %edx"
+                    ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jl $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
                     ops /= "push 1"
                 }
                 ">=" -> {
-                    ops /= "pop eax"
-                    ops /= "pop edx"
-                    ops /= "cmp edx, eax" //compare and set flags
+                    ops /= "pop %eax"
+                    ops /= "pop %edx"
+                    ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jle $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
                     ops /= "push 1"
                 }
                 "==" -> {
-                    ops /= "pop eax"
-                    ops /= "pop edx"
-                    ops /= "cmp edx, eax" //compare and set flags
+                    ops /= "pop %eax"
+                    ops /= "pop %edx"
+                    ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "je $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
                     ops /= "push 1"
                 }
                 "!=" -> {
-                    ops /= "pop eax"
-                    ops /= "pop edx"
-                    ops /= "cmp edx, eax" //compare and set flags
+                    ops /= "pop %eax"
+                    ops /= "pop %edx"
+                    ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jne $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
@@ -203,8 +180,8 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             }
         }
         is StackOp.Jif -> {
-            ops /= "pop eax"
-            ops /= "cmp 0, eax"
+            ops /= "pop %eax"
+            ops /= "cmp 0, %eax"
             ops /= "jne $+4"
             ops /= "jmp ${op.label}"
         }
