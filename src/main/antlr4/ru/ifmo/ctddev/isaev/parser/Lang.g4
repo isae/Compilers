@@ -64,10 +64,10 @@ expr
          |   expr ( '<'|'<='|'>'|'>=') expr
          |   expr ( '=='|'!=') expr
          |   expr '&' expr
-         |   expr '!!' expr
          |   expr '|' expr
          |   expr '&&' expr
          |   expr '||' expr
+         |   expr '!!' expr
          ;
         
 atom

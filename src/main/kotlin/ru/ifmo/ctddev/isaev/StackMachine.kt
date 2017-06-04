@@ -15,9 +15,15 @@ import kotlin.collections.HashSet
 
 
 val random = Random()
+val alreadyUsed = HashSet<String>()
 
 fun getRandomLabel(): String {
-    return "_${BigInteger(20, random).toString(32)}"
+    var result: String;
+    do {
+        result = "_${BigInteger(30, random).toString(32)}"
+    } while (!alreadyUsed.contains(result))
+    alreadyUsed.add(result)
+    return result
 }
 
 fun compile(node: AST): List<StackOp> {
@@ -317,7 +323,7 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                 is StackOp.MakeArr -> {
                     val array = ArrayList<Val>()
                     repeat(it.size, {
-                      array += pop()  
+                        array += pop()
                     })
                     push(Val.Array(array.asReversed()))
                 }

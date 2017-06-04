@@ -235,7 +235,8 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
                 ">=" -> AST.Binary.Geq(left, right)
                 "&" -> AST.Binary.And(left, right)
                 "|" -> AST.Binary.Or(left, right)
-                "!!" -> AST.Binary.Or(left, right)
+                "!!" -> compileDoubleOr(left, right)
+                "||" -> compileDoubleOr(left, right)
                 "&&" -> AST.Conditional(
                         AST.Binary.Eq(left, AST_ZERO),
                         listOf(AST_ZERO),
@@ -249,24 +250,27 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
                                 )
                         )
                 )
-            // TODO: here we treat numbers as booleans (replacing positive value with 1)
-            // TODO: too fat AST for such simple literal
-                "||" -> AST.Conditional(
-                        AST.Binary.Neq(left, AST_ZERO),
-                        listOf(AST_ONE),
-                        emptyList(),
-                        listOf(
-                                AST.Conditional(
-                                        AST.Binary.Eq(right, AST_ZERO),
-                                        listOf(AST_ZERO),
-                                        emptyList(),
-                                        listOf(AST_ONE)
-                                )
-                        )
-                )
                 else -> throw IllegalStateException("Unknown term in expression: ${term.text}")
             }
         }
+    }
+
+    private fun compileDoubleOr(left: AST, right: AST): AST.Conditional {
+        // TODO: here we treat numbers as booleans (replacing positive value with 1)
+        // TODO: too fat AST for such simple literal
+        return AST.Conditional(
+                AST.Binary.Neq(left, AST_ZERO),
+                listOf(AST_ONE),
+                emptyList(),
+                listOf(
+                        AST.Conditional(
+                                AST.Binary.Eq(right, AST_ZERO),
+                                listOf(AST_ZERO),
+                                emptyList(),
+                                listOf(AST_ONE)
+                        )
+                )
+        )
     }
 
     override fun visitAtom(ctx: LangParser.AtomContext?): AST {
