@@ -6,7 +6,7 @@ import ru.ifmo.ctddev.isaev.data.Val
 import java.util.*
 
 val prefix = """
-.globl _main
+.globl $MAIN_NAME
     """
 
 val rodata = """
@@ -15,16 +15,24 @@ format_in: .asciz "%d"
 format_out: .asciz "%d\n"
 """
 
-val fun_prefix = """
-    pushl %ebp
-    movl  %esp, %ebp
-    andl  $-16, %esp
-"""
-
-val fun_suffix = """
-    mov $1, %eax
+val suffix = """
+    movl $0, %eax
     ret
 """
+
+private fun clib_prolog(list: MutableList<String>, size: Int){
+    list /= "movl %esp, %ebx"
+    list /= "andl $-16, %esp"
+    list /= "subl \$$size, %esp"
+    list /= "push %ebx"
+    list /= "subl \$$size, %esp"
+}
+
+private fun clib_epilog(list: MutableList<String>, size: Int){
+    list /= "addl \$$size, %esp"
+    list /= "pop  %ebx"
+    list /= "movl %ebx, %esp"
+}
 
 private fun compile(node: StackOp): List<String> {
     val ops = ArrayList<String>()
@@ -40,9 +48,8 @@ fun compile(nodes: List<StackOp>): List<String> {
     ops /= "int_read: .int 0"
     localVars.forEach { ops /= "$it: .int 0" }
     ops += prefix
-    ops += fun_prefix
     compile(nodes, ops)
-    ops += fun_suffix
+    ops += suffix
     return ops
 }
 
@@ -56,13 +63,20 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         is StackOp.BuiltIn -> {
             when {
                 op.tag == BuiltInTag.READ -> {
-                    ops /= "push  \$int_read"
-                    ops /= "push  format_in"
-                    ops /= "call  scanf"
+                    clib_prolog(ops, 16)
+                    ops /= "movl \$int_read, 4(%esp)"
+                    ops /= "movl format_in, %esp"
+                    ops /= "call scanf"
+                    clib_epilog(ops, 16)
+                    ops /= "push int_read"
                 }
                 op.tag == BuiltInTag.WRITE -> {
-                    ops /= "push format_out"
+                    ops /= "pop %eax"
+                    clib_prolog(ops, 16)
+                    ops /= "movl %eax, 4(%esp)"
+                    ops /= "movl format_out, %esp"
                     ops /= "call printf"
+                    clib_epilog(ops, 16)
                 }
                 else -> TODO("Not implemented")
             }
