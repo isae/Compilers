@@ -21,7 +21,7 @@ fun getRandomLabel(): String {
     var result: String;
     do {
         result = "_${BigInteger(30, random).toString(32)}"
-    } while (!alreadyUsed.contains(result))
+    } while (alreadyUsed.contains(result))
     alreadyUsed.add(result)
     return result
 }

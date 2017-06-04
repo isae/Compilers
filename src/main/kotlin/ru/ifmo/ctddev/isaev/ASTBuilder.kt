@@ -256,7 +256,7 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
     }
 
     private fun compileDoubleOr(left: AST, right: AST): AST.Conditional {
-        // TODO: here we treat numbers as booleans (replacing positive value with 1)
+        // TODO: here we treat numbers as booleans (replacing non-zero value with 1)
         // TODO: too fat AST for such simple literal
         return AST.Conditional(
                 AST.Binary.Neq(left, AST_ZERO),
