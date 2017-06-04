@@ -1,5 +1,8 @@
 package ru.ifmo.ctddev.isaev
 
+import ru.ifmo.ctddev.isaev.data.BuiltInTag
+import ru.ifmo.ctddev.isaev.data.StackOp
+import ru.ifmo.ctddev.isaev.data.Val
 import java.util.*
 
 val macros = """
@@ -37,51 +40,6 @@ val suffix = """
     mov eax, 1
     ret
 """
-
-sealed class AsmOp {
-    class Nop : AsmOp() {
-        override fun toString(): String {
-            return "NOP"
-        }
-    }
-
-    class Push(val arg: Int) : AsmOp() {
-        override fun toString(): String {
-            return "PUSH $arg"
-        }
-    }
-
-    class Ld(val arg: String) : AsmOp() {
-        override fun toString(): String {
-            return "LD $arg"
-        }
-    }
-
-    class St(val arg: String) : AsmOp() {
-        override fun toString(): String {
-            return "ST $arg"
-        }
-    }
-
-    class Label(val label: String) : AsmOp() {
-
-        override fun toString(): String {
-            return "LABEL $label"
-        }
-    }
-
-    class Jump(val label: String) : AsmOp() {
-        override fun toString(): String {
-            return "JUMP $label"
-        }
-    }
-
-    class Jif(val label: String) : AsmOp() {
-        override fun toString(): String {
-            return "JIF $label"
-        }
-    }
-}
 
 private fun compile(node: StackOp): List<String> {
     val ops = ArrayList<String>()

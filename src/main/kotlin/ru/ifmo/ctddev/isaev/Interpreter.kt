@@ -1,5 +1,7 @@
 package ru.ifmo.ctddev.isaev
 
+import ru.ifmo.ctddev.isaev.data.AST
+import ru.ifmo.ctddev.isaev.data.Val
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter

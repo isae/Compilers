@@ -1,18 +1,9 @@
 package ru.ifmo.ctddev.isaev
 
+import ru.ifmo.ctddev.isaev.data.BuiltInTag
+import ru.ifmo.ctddev.isaev.data.Val
 import java.io.BufferedReader
 import java.io.PrintWriter
-
-/**
- * @author iisaev
- */
-
-enum class BuiltInTag(val argSize: Int) {
-    READ(0), WRITE(1), STRLEN(1),
-    STRGET(2), STRSET(3), STRSUB(3),
-    STRDUP(1), STRCAT(2), STRCMP(2),
-    STRMAKE(2), ARRMAKE(2), ARRLEN(1)
-}
 
 fun apply(l: Val, r: Val, op: String): Int {
     if (listOf("+", "-", "*", "&", "|", "/", "%").contains(op)) {
