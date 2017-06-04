@@ -7,17 +7,17 @@ import java.util.*
 
 val macros = """
 %macro clib_prolog 1
-mov ebx, esp 
-and esp, 0xFFFFFFF0
-sub esp, 12    
+mov esp, ebx 
+and 0xFFFFFFF0, esp
+sub 12, esp    
 push ebx         
-sub esp, %1
+sub %1, esp
 %endmacro
 
 %macro clib_epilog 1
-add esp, %1
+add %1, esp
 pop ebx        
-mov esp, ebx
+mov ebx, esp
 %endmacro
     """
 
@@ -37,7 +37,7 @@ format_out: db "%d", 10, 0
 """
 
 val suffix = """
-    mov eax, 1
+    mov 1, eax
     ret
 """
 
@@ -74,8 +74,8 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             when {
                 op.tag == BuiltInTag.READ -> {
                     ops /= "clib_prolog 16"
-                    ops /= "mov dword [esp+4], int_read"
-                    ops /= "mov dword [esp], format_in"
+                    ops /= "mov int_read, dword [esp+4]"
+                    ops /= "mov format_in, dword [esp]"
                     ops /= "call scanf"
                     ops /= "clib_epilog 16"
                     ops /= "push dword [int_read]"
@@ -83,8 +83,8 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                 op.tag == BuiltInTag.WRITE -> {
                     ops /= "pop eax"
                     ops /= "clib_prolog 16"
-                    ops /= "mov dword [esp+4], eax"
-                    ops /= "mov dword [esp], format_out"
+                    ops /= "mov eax, dword [esp+4]"
+                    ops /= "mov format_out, dword [esp]"
                     ops /= "call printf"
                     ops /= "clib_epilog 16"
                 }
@@ -109,7 +109,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         }
         is StackOp.St -> {
             ops /= "pop eax"
-            ops /= "mov [${op.arg}], eax"
+            ops /= "mov eax, [${op.arg}]"
         }
         is StackOp.Binop -> {
             when (op.op) {
@@ -122,13 +122,13 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                 "+" -> {
                     ops /= "pop eax"
                     ops /= "pop edx"
-                    ops /= "add eax, edx"
+                    ops /= "add edx, eax"
                     ops /= "push eax"
                 }
                 "-" -> {
                     ops /= "pop edx"
                     ops /= "pop eax"
-                    ops /= "sub eax, edx"
+                    ops /= "sub edx, eax"
                     ops /= "push eax"
                 }
                 "/" -> {
@@ -148,7 +148,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                 "<" -> {
                     ops /= "pop edx"
                     ops /= "pop eax"
-                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "cmp edx, eax" //compare and set flags
                     ops /= "jl $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
@@ -157,7 +157,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                 "<=" -> {
                     ops /= "pop edx"
                     ops /= "pop eax"
-                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "cmp edx, eax" //compare and set flags
                     ops /= "jle $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
@@ -166,7 +166,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                 ">" -> {
                     ops /= "pop eax"
                     ops /= "pop edx"
-                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "cmp edx, eax" //compare and set flags
                     ops /= "jl $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
@@ -175,7 +175,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                 ">=" -> {
                     ops /= "pop eax"
                     ops /= "pop edx"
-                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "cmp edx, eax" //compare and set flags
                     ops /= "jle $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
@@ -184,7 +184,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                 "==" -> {
                     ops /= "pop eax"
                     ops /= "pop edx"
-                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "cmp edx, eax" //compare and set flags
                     ops /= "je $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
@@ -193,7 +193,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                 "!=" -> {
                     ops /= "pop eax"
                     ops /= "pop edx"
-                    ops /= "cmp eax, edx" //compare and set flags
+                    ops /= "cmp edx, eax" //compare and set flags
                     ops /= "jne $+6"
                     ops /= "push 0"
                     ops /= "jmp $+4"
@@ -204,7 +204,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         }
         is StackOp.Jif -> {
             ops /= "pop eax"
-            ops /= "cmp eax, 0"
+            ops /= "cmp 0, eax"
             ops /= "jne $+4"
             ops /= "jmp ${op.label}"
         }
