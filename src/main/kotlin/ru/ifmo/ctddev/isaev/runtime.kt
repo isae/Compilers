@@ -45,7 +45,7 @@ fun compileToASM(program: AST, file: File) {
     val asmCode = compile(compiledSTM)
     println("File to compile: ${file.absolutePath}")
     println("Parent directory: ${file.parentFile.absolutePath}")
-    PrintWriter("${file.parentFile.absolutePath}/out/${file.name}.asm").use { writer ->
+    PrintWriter("${file.parentFile.absolutePath}/out/${file.name}.S").use { writer ->
         asmCode.forEach { writer.println(it)}
     }
 }
