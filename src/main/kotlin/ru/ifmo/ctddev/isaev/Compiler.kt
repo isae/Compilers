@@ -6,17 +6,22 @@ import ru.ifmo.ctddev.isaev.data.Val
 import java.util.*
 
 val prefix = """
-.section __TEXT,__text
 .globl _main
     """
 
 val rodata = """
-.section __TEXT,__cstring,cstring_literals
+.section .rodata
 format_in: .asciz "%d"
 format_out: .asciz "%d\n"
 """
 
-val suffix = """
+val fun_prefix = """
+    pushl %ebp
+    movl  %esp, %ebp
+    andl  $-16, %esp
+"""
+
+val fun_suffix = """
     mov $1, %eax
     ret
 """
@@ -35,8 +40,9 @@ fun compile(nodes: List<StackOp>): List<String> {
     ops /= "int_read: .int 0"
     localVars.forEach { ops /= "$it: .int 0" }
     ops += prefix
+    ops += fun_prefix
     compile(nodes, ops)
-    ops += suffix
+    ops += fun_suffix
     return ops
 }
 
@@ -50,24 +56,13 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         is StackOp.BuiltIn -> {
             when {
                 op.tag == BuiltInTag.READ -> {
-                    ops /= "/* align to 16 prolog */"
-                    ops /= "movl int_read(,1), %edx"
-                    ops /= "movl %edx, +4(%esp)"
-                    ops /= "movl format_in(,1), %esp"
-                    ops /= "movl format_in(,1), %edx"
-                    ops /= "movl %edx, (%esp)"
-                    ops /= "call _scanf"
-                    ops /= "/* align to 16 epilog */"
-                    ops /= "push (int_read)"
+                    ops /= "push  \$int_read"
+                    ops /= "push  format_in"
+                    ops /= "call  scanf"
                 }
                 op.tag == BuiltInTag.WRITE -> {
-                    ops /= "pop %eax"
-                    ops /= "/* align to 16 prolog */"
-                    ops /= "mov %eax, +4(%esp)"
-                    ops /= "movl format_out(,1), %edx"
-                    ops /= "movl %edx, (%esp)"
-                    ops /= "call _printf"
-                    ops /= "/*  align to 16 epilog */"
+                    ops /= "push format_out"
+                    ops /= "call printf"
                 }
                 else -> TODO("Not implemented")
             }
