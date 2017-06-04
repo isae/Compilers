@@ -91,7 +91,7 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
         }
         is AST.Program -> {
             compile(node.functions, stack)
-            stack += StackOp.Label("main")
+            stack += StackOp.Label("_main")
             compile(node.statements, stack)
         }
         is AST.Conditional -> { //TODO: else is not mandatory
@@ -234,7 +234,7 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                    val writer: PrintWriter = PrintWriter(OutputStreamWriter(System.out))) {
 
     private fun runStackMachine(operations: List<StackOp>) {
-        var funPrefix = "main"
+        var funPrefix = "_main"
         val memory = HashMap<String, Val>()
 
         val stack = ArrayList<Val>()
@@ -258,7 +258,7 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                 labels[op.label] = i
             }
         }
-        var ip = labels["main"] ?: throw IllegalStateException("No such label: main")
+        var ip = labels["_main"] ?: throw IllegalStateException("No such label: _main")
 
         fun followIndexes(size: Int, name: String): Pair<Int, Val.Array> {
             val indexes = ArrayList<Int>()

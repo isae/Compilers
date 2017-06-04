@@ -51,17 +51,21 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             when {
                 op.tag == BuiltInTag.READ -> {
                     ops /= "/* align to 16 prolog */"
-                    ops /= "movl int_read(,1), +4(%esp)"
-                    ops /= "movl format_in(,1), (%esp)"
+                    ops /= "movl int_read(,1), %edx"
+                    ops /= "movl %edx, +4(%esp)"
+                    ops /= "movl format_in(,1), %esp"
+                    ops /= "movl format_in(,1), %edx"
+                    ops /= "movl %edx, (%esp)"
                     ops /= "call _scanf"
                     ops /= "/* align to 16 epilog */"
                     ops /= "push (int_read)"
                 }
                 op.tag == BuiltInTag.WRITE -> {
-                    ops /= "pop eax"
+                    ops /= "pop %eax"
                     ops /= "/* align to 16 prolog */"
                     ops /= "mov %eax, +4(%esp)"
-                    ops /= "movl format_out(,1), (%esp)"
+                    ops /= "movl format_out(,1), %edx"
+                    ops /= "movl %edx, (%esp)"
                     ops /= "call _printf"
                     ops /= "/*  align to 16 epilog */"
                 }

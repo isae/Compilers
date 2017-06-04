@@ -42,6 +42,7 @@ fun runStackMachine(program: AST) {
 
 fun compileToASM(program: AST, file: File) {
     val compiledSTM = compile(program)
+    compiledSTM.forEach { println(it) }
     val asmCode = compile(compiledSTM)
     println("File to compile: ${file.absolutePath}")
     println("Parent directory: ${file.parentFile.absolutePath}")
