@@ -4,6 +4,7 @@ import ru.ifmo.ctddev.isaev.data.BuiltInTag
 import ru.ifmo.ctddev.isaev.data.StackOp
 import ru.ifmo.ctddev.isaev.data.Val
 import java.util.*
+import kotlin.collections.HashMap
 
 val prefix = """
 read_int:
@@ -46,7 +47,8 @@ movl $0, %eax
 ret
 """
 
-val COMM_PREFIX  = "//"
+val COMM_PREFIX = "//"
+val FUNCTION_PREFIX = "_function_"
 
 private fun compile(node: StackOp): List<String> {
     val ops = ArrayList<String>()
@@ -206,13 +208,26 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             ops /= "jmp ${op.label}"
         }
         is StackOp.Call -> {
+            ops /= "addl $1, %ecx"
             TODO("NOT SUPPORTED")
         }
         is StackOp.Enter -> {
-            TODO("NOT SUPPORTED")
+            val offsets = HashMap<String, Int>()
+            var offset = 0
+            op.argNames.forEach {
+                offsets[it] = offset
+                offset += 4
+            }
+            op.localVariables.forEach {
+                offsets[it] = offset
+                offset += 4
+            }
+            ops /= "enter \$$offset, %ecx"
         }
         is StackOp.Ret -> {
-            TODO("NOT SUPPORTED")
+            ops /= "popl %eax"
+            ops /= "leave"
+            ops /= "ret"
         }
     }
 }
