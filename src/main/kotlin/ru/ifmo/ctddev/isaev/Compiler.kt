@@ -42,8 +42,8 @@ format_out: .asciz "%d\n"
 """
 
 val suffix = """
-    movl $0, %eax
-    ret
+movl $0, %eax
+ret
 """
 
 private fun compile(node: StackOp): List<String> {
