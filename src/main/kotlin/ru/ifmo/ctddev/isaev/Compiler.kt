@@ -6,26 +6,28 @@ import ru.ifmo.ctddev.isaev.data.Val
 import java.util.*
 
 val prefix = """
-﻿read_int:
+read_int:
   enter $16, $0
   andl $-16, %esp
   lea int_read, %eax
-  movl %eax, -4(%ebp)
+  movl %eax, 4(%esp)
   lea format_in, %eax
-  movl %eax, (%ebp)
+  movl %eax, (%esp)
   call scanf
   movl $0, %eax
   leave
   ret
-
-﻿write_int:
+  
+write_int:
+  popl %edx
   popl %eax
+  pushl %edx
   enter $16, $0
   andl $-16, %esp
-  movl %eax, -4(%ebp)
-  lea format_in, %eax
-  movl %eax, (%ebp)
-  call scanf
+  movl %eax, 4(%esp)
+  lea format_out, %eax
+  movl %eax, (%esp)
+  call printf
   movl $0, %eax
   leave
   ret
@@ -92,109 +94,109 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             ops /= ";${op.comment}"
         }
         is StackOp.Push -> when (op.arg) {
-            is Val.Number -> ops /= "push ${op.arg.value}"
+            is Val.Number -> ops /= "pushl \$${op.arg.value}"
             else -> TODO("Only Integer are implemented for now")
         }
         is StackOp.Ld -> {
-            ops /= "push (${op.arg})"
+            ops /= "pushl (${op.arg})"
         }
         is StackOp.St -> {
-            ops /= "pop %eax"
-            ops /= "mov %eax, (${op.arg})"
+            ops /= "popl %eax"
+            ops /= "movl %eax, (${op.arg})"
         }
         is StackOp.Binop -> {
             when (op.op) {
                 "*" -> {
-                    ops /= "pop %eax"
-                    ops /= "pop %edx"
-                    ops /= "mul %edx"
-                    ops /= "push %eax"
+                    ops /= "popl %eax"
+                    ops /= "popl %edx"
+                    ops /= "mull %edx"
+                    ops /= "pushl %eax"
                 }
                 "+" -> {
-                    ops /= "pop %eax"
-                    ops /= "pop %edx"
-                    ops /= "add %edx, %eax"
-                    ops /= "push %eax"
+                    ops /= "popl %eax"
+                    ops /= "popl %edx"
+                    ops /= "addl %edx, %eax"
+                    ops /= "pushl %eax"
                 }
                 "-" -> {
-                    ops /= "pop %edx"
-                    ops /= "pop %eax"
-                    ops /= "sub %edx, %eax"
-                    ops /= "push %eax"
+                    ops /= "popl %edx"
+                    ops /= "popl %eax"
+                    ops /= "subl %edx, %eax"
+                    ops /= "pushl %eax"
                 }
                 "/" -> {
-                    ops /= "xor %edx, %edx"
-                    ops /= "pop %ecx"
-                    ops /= "pop %eax"
-                    ops /= "div %ecx"
-                    ops /= "push %eax"
+                    ops /= "xorl %edx, %edx"
+                    ops /= "popl %ecx"
+                    ops /= "popl %eax"
+                    ops /= "divl %ecx"
+                    ops /= "pushl %eax"
                 }
                 "%" -> {
-                    ops /= "xor %edx, %edx"
-                    ops /= "pop %ecx"
-                    ops /= "pop %eax"
-                    ops /= "div %ecx"
-                    ops /= "push %edx"
+                    ops /= "xorl %edx, %edx"
+                    ops /= "popl %ecx"
+                    ops /= "popl %eax"
+                    ops /= "divl %ecx"
+                    ops /= "pushl %edx"
                 }
                 "<" -> {
-                    ops /= "pop %edx"
-                    ops /= "pop %eax"
+                    ops /= "popl %edx"
+                    ops /= "popl %eax"
                     ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jl $+6"
-                    ops /= "push 0"
+                    ops /= "pushl 0"
                     ops /= "jmp $+4"
-                    ops /= "push 1"
+                    ops /= "pushl 1"
                 }
                 "<=" -> {
-                    ops /= "pop %edx"
-                    ops /= "pop %eax"
+                    ops /= "popl %edx"
+                    ops /= "popl %eax"
                     ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jle $+6"
-                    ops /= "push 0"
+                    ops /= "pushl 0"
                     ops /= "jmp $+4"
-                    ops /= "push 1"
+                    ops /= "pushl 1"
                 }
                 ">" -> {
-                    ops /= "pop %eax"
-                    ops /= "pop %edx"
+                    ops /= "popl %eax"
+                    ops /= "popl %edx"
                     ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jl $+6"
-                    ops /= "push 0"
+                    ops /= "pushl 0"
                     ops /= "jmp $+4"
-                    ops /= "push 1"
+                    ops /= "pushl 1"
                 }
                 ">=" -> {
-                    ops /= "pop %eax"
-                    ops /= "pop %edx"
+                    ops /= "popl %eax"
+                    ops /= "popl %edx"
                     ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jle $+6"
-                    ops /= "push 0"
+                    ops /= "pushl 0"
                     ops /= "jmp $+4"
-                    ops /= "push 1"
+                    ops /= "pushl 1"
                 }
                 "==" -> {
-                    ops /= "pop %eax"
-                    ops /= "pop %edx"
+                    ops /= "popl %eax"
+                    ops /= "popl %edx"
                     ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "je $+6"
-                    ops /= "push 0"
+                    ops /= "pushl 0"
                     ops /= "jmp $+4"
-                    ops /= "push 1"
+                    ops /= "pushl 1"
                 }
                 "!=" -> {
-                    ops /= "pop %eax"
-                    ops /= "pop %edx"
+                    ops /= "popl %eax"
+                    ops /= "popl %edx"
                     ops /= "cmp %edx, %eax" //compare and set flags
                     ops /= "jne $+6"
-                    ops /= "push 0"
+                    ops /= "pushl 0"
                     ops /= "jmp $+4"
-                    ops /= "push 1"
+                    ops /= "pushl 1"
                 }
                 else -> TODO("NOT SUPPORTED: ${op.op}")
             }
         }
         is StackOp.Jif -> {
-            ops /= "pop %eax"
+            ops /= "popl %eax"
             ops /= "cmp 0, %eax"
             ops /= "jne $+4"
             ops /= "jmp ${op.label}"
