@@ -142,55 +142,55 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
                     ops /= "popl %edx"
                     ops /= "popl %eax"
                     ops /= "cmp %edx, %eax" //compare and set flags
-                    ops /= "jl $+6"
-                    ops /= "pushl 0"
-                    ops /= "jmp $+4"
-                    ops /= "pushl 1"
+                    ops /= "jl .+6"
+                    ops /= "pushl \$0"
+                    ops /= "jmp .+4"
+                    ops /= "pushl \$1"
                 }
                 "<=" -> {
                     ops /= "popl %edx"
                     ops /= "popl %eax"
                     ops /= "cmp %edx, %eax" //compare and set flags
-                    ops /= "jle $+6"
-                    ops /= "pushl 0"
-                    ops /= "jmp $+4"
-                    ops /= "pushl 1"
+                    ops /= "jle .+6"
+                    ops /= "pushl \$0"
+                    ops /= "jmp .+4"
+                    ops /= "pushl \$1"
                 }
                 ">" -> {
                     ops /= "popl %eax"
                     ops /= "popl %edx"
                     ops /= "cmp %edx, %eax" //compare and set flags
-                    ops /= "jl $+6"
-                    ops /= "pushl 0"
-                    ops /= "jmp $+4"
-                    ops /= "pushl 1"
+                    ops /= "jl .+6"
+                    ops /= "pushl \$0"
+                    ops /= "jmp .+4"
+                    ops /= "pushl \$1"
                 }
                 ">=" -> {
                     ops /= "popl %eax"
                     ops /= "popl %edx"
                     ops /= "cmp %edx, %eax" //compare and set flags
-                    ops /= "jle $+6"
-                    ops /= "pushl 0"
-                    ops /= "jmp $+4"
-                    ops /= "pushl 1"
+                    ops /= "jle .+6"
+                    ops /= "pushl \$0"
+                    ops /= "jmp .+4"
+                    ops /= "pushl \$1"
                 }
                 "==" -> {
                     ops /= "popl %eax"
                     ops /= "popl %edx"
                     ops /= "cmp %edx, %eax" //compare and set flags
-                    ops /= "je $+6"
-                    ops /= "pushl 0"
-                    ops /= "jmp $+4"
-                    ops /= "pushl 1"
+                    ops /= "je .+6"
+                    ops /= "pushl \$0"
+                    ops /= "jmp .+4"
+                    ops /= "pushl \$1"
                 }
                 "!=" -> {
                     ops /= "popl %eax"
                     ops /= "popl %edx"
                     ops /= "cmp %edx, %eax" //compare and set flags
-                    ops /= "jne $+6"
-                    ops /= "pushl 0"
-                    ops /= "jmp $+4"
-                    ops /= "pushl 1"
+                    ops /= "jne .+6"
+                    ops /= "pushl \$0"
+                    ops /= "jmp .+4"
+                    ops /= "pushl \$1"
                 }
                 else -> TODO("NOT SUPPORTED: ${op.op}")
             }
@@ -198,7 +198,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         is StackOp.Jif -> {
             ops /= "popl %eax"
             ops /= "cmp 0, %eax"
-            ops /= "jne $+4"
+            ops /= "jne .+4"
             ops /= "jmp ${op.label}"
         }
         is StackOp.Jump -> {
