@@ -6,6 +6,30 @@ import ru.ifmo.ctddev.isaev.data.Val
 import java.util.*
 
 val prefix = """
+﻿read_int:
+  enter $16, $0
+  andl $-16, %esp
+  lea int_read, %eax
+  movl %eax, -4(%ebp)
+  lea format_in, %eax
+  movl %eax, (%ebp)
+  call scanf
+  movl $0, %eax
+  leave
+  ret
+
+﻿write_int:
+  popl %eax
+  enter $16, $0
+  andl $-16, %esp
+  movl %eax, -4(%ebp)
+  lea format_in, %eax
+  movl %eax, (%ebp)
+  call scanf
+  movl $0, %eax
+  leave
+  ret
+
 .globl $MAIN_NAME
     """
 
@@ -19,20 +43,6 @@ val suffix = """
     movl $0, %eax
     ret
 """
-
-private fun clib_prolog(list: MutableList<String>, size: Int){
-    list /= "movl %esp, %ebx"
-    list /= "andl $-16, %esp"
-    list /= "subl \$$size, %esp"
-    list /= "push %ebx"
-    list /= "subl \$$size, %esp"
-}
-
-private fun clib_epilog(list: MutableList<String>, size: Int){
-    list /= "addl \$$size, %esp"
-    list /= "pop  %ebx"
-    list /= "movl %ebx, %esp"
-}
 
 private fun compile(node: StackOp): List<String> {
     val ops = ArrayList<String>()
@@ -63,20 +73,11 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         is StackOp.BuiltIn -> {
             when {
                 op.tag == BuiltInTag.READ -> {
-                    clib_prolog(ops, 16)
-                    ops /= "movl \$int_read, 4(%esp)"
-                    ops /= "movl format_in, %esp"
-                    ops /= "call scanf"
-                    clib_epilog(ops, 16)
+                    ops /= "call read_int"
                     ops /= "push int_read"
                 }
                 op.tag == BuiltInTag.WRITE -> {
-                    ops /= "pop %eax"
-                    clib_prolog(ops, 16)
-                    ops /= "movl %eax, 4(%esp)"
-                    ops /= "movl format_out, %esp"
-                    ops /= "call printf"
-                    clib_epilog(ops, 16)
+                    ops /= "call write_int"
                 }
                 else -> TODO("Not implemented")
             }
