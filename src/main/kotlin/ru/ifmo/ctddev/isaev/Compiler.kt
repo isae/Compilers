@@ -46,6 +46,8 @@ movl $0, %eax
 ret
 """
 
+val COMM_PREFIX  = "//"
+
 private fun compile(node: StackOp): List<String> {
     val ops = ArrayList<String>()
     compile(node, ops)
@@ -91,7 +93,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             ops += "${op.label}:"
         }
         is StackOp.Comm -> {
-            ops /= ";${op.comment}"
+            ops /= "$COMM_PREFIX${op.comment}"
         }
         is StackOp.Push -> when (op.arg) {
             is Val.Number -> ops /= "pushl \$${op.arg.value}"
@@ -197,7 +199,7 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         }
         is StackOp.Jif -> {
             ops /= "popl %eax"
-            ops /= "cmp 0, %eax"
+            ops /= "cmp $0, %eax"
             ops /= "jne .+4"
             ops /= "jmp ${op.label}"
         }
