@@ -97,12 +97,12 @@ private fun compile(op: StackOp, ops: MutableList<String>, varOffsets: HashMap<S
         }
         is StackOp.Ld -> {
             val offset = varOffsets[op.arg] ?: throw IllegalStateException("Variable not defined: ${op.arg}")
-            ops /= "pushl -$offset(%ebp) // Load ${op.arg}"
+            ops /= "pushl $offset(%ebp) // Load ${op.arg}"
         }
         is StackOp.St -> {
             ops /= "popl %eax"
             val offset = varOffsets[op.arg] ?: throw IllegalStateException("Variable not defined: ${op.arg}")
-            ops /= "movl %eax, -$offset(%ebp) // Store ${op.arg}"
+            ops /= "movl %eax, $offset(%ebp) // Store ${op.arg}"
         }
         is StackOp.Binop -> {
             when (op.op) {
@@ -204,26 +204,28 @@ private fun compile(op: StackOp, ops: MutableList<String>, varOffsets: HashMap<S
             ops /= "jmp ${op.label}"
         }
         is StackOp.Call -> {
-            ops /= "addl $1, %ecx"
-            TODO("NOT SUPPORTED")
+            ops /= "call ${op.funName}"
+            ops /= "pushl %eax"
         }
         is StackOp.Enter -> {
             varOffsets.clear()
-            var offset = 4
+            var argOffset = 8
             op.argNames.forEach {
-                varOffsets[it] = offset
-                offset += 4
+                varOffsets[it] = argOffset
+                argOffset += 4
             }
-            op.localVariables.forEach {
-                varOffsets[it] = offset
-                offset += 4
+            var localVarOffset = -4
+            op.localVariables.reversed().forEach {
+                varOffsets[it] = localVarOffset
+                localVarOffset -= 4
             }
-            ops /= "enter \$$offset, $0"
+            val frameSize = (op.localVariables.size + 1) * 4
+            ops /= "enter \$$frameSize, $0"
         }
         is StackOp.Ret -> {
             ops /= "popl %eax"
             ops /= "leave"
-            ops /= "ret"
+            ops /= "ret\n"
         }
     }
 }
