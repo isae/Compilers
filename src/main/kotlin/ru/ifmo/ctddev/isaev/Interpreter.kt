@@ -89,14 +89,9 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                 }
                 is AST.FunctionDef -> interpretStatements(node.body)
                 is AST.Program -> {
-                    node.functions.forEach {
-                        if (funCtx.containsKey(it.functionName)) {
-                            throw IllegalStateException("Duplicate function: ${it.functionName}")
-                        } else {
-                            funCtx.put(it.functionName, it)
-                        }
-                    }
-                    return interpretStatements(node.statements)
+                    funCtx += node.functions
+                    val main = funCtx["main"] ?: throw IllegalStateException("Main not found")
+                    return interpretStatements(main.body)
                 }
                 is AST.Conditional -> {
                     val isTrue = takeInt(interpret(node.expr)) > 0

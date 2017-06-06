@@ -6,6 +6,7 @@ import ru.ifmo.ctddev.isaev.data.*
 import ru.ifmo.ctddev.isaev.parser.LangParser
 import ru.ifmo.ctddev.isaev.parser.LangVisitor
 import java.util.*
+import kotlin.collections.HashMap
 
 /**
  * @author iisaev
@@ -88,10 +89,18 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
             functionDefs += visitFunctionDef(child)
             ++pos
         }
-        return AST.Program(
-                functionDefs,
-                visitStatements(ctx.getChild(pos) as LangParser.CodeBlockContext)
-        )
+        val mainBody = visitStatements(ctx.getChild(pos) as LangParser.CodeBlockContext)
+        val main = AST.FunctionDef(MAIN_NAME, emptyList(), mainBody)
+        functionDefs.add(main)
+        val funCtx = HashMap<String, AST.FunctionDef>()
+        functionDefs.forEach {
+            if (funCtx.containsKey(it.functionName)) {
+                throw IllegalStateException("Duplicate function: ${it.functionName}")
+            } else {
+                funCtx.put(it.functionName, it)
+            }
+        }
+        return AST.Program(funCtx)
     }
 
     override fun visitStatement(ctx: LangParser.StatementContext?): AST {
@@ -172,7 +181,7 @@ class ASTBuilder : AbstractParseTreeVisitor<AST>(), LangVisitor<AST> {
     }
 
     override fun visitFunctionCall(ctx: LangParser.FunctionCallContext?): AST.FunctionCall {
-        val functionName = ctx!!.getChild(0).text ?: throw IllegalStateException("Null funciton name")
+        val functionName = ctx!!.getChild(0).text ?: throw IllegalStateException("Null function name")
         val builtInTag = when (functionName) {
             "read" -> BuiltInTag.READ
             "write" -> BuiltInTag.WRITE

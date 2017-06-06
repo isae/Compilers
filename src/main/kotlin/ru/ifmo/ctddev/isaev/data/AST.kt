@@ -35,7 +35,7 @@ sealed class AST {
     }
 
     class FunctionDef(val functionName: String, val argNames: List<String>, val body: List<AST>) : AST()
-    class Program(val functions: List<FunctionDef>, val statements: List<AST>) : AST()
+    class Program(val functions: Map<String, FunctionDef>) : AST()
     class Conditional(val expr: AST, val ifTrue: List<AST>, val elifs: List<Elif>, val ifFalse: List<AST>) : AST()
     class Assignment(val variable: Variable, val toAssign: AST) : AST()
     class WhileLoop(val expr: AST, val loop: List<AST>) : AST()

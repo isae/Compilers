@@ -79,8 +79,10 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             }
         }
         is AST.FunctionDef -> {
+            val funPrefix = if (node.functionName == MAIN_NAME) "" else "_function_"
+
             stack += StackOp.Comm("Function '${node.functionName}' definition ...")
-            stack += StackOp.Label("_${node.functionName}")
+            stack += StackOp.Label("$funPrefix${node.functionName}")
             val localVariables = searchLocalVariables(node.body)
             localVariables.removeAll(node.argNames)
             stack += StackOp.Enter(node.argNames, localVariables)
@@ -90,10 +92,7 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
             stack += StackOp.Ret()
         }
         is AST.Program -> {
-            compile(node.functions, stack)
-            stack += StackOp.Comm("Function '$MAIN_NAME' definition ...")
-            stack += StackOp.Label(MAIN_NAME)
-            compile(node.statements, stack)
+            node.functions.values.forEach { compile(it, stack) }
         }
         is AST.Conditional -> { //TODO: else is not mandatory
             val elifLabels = node.elifs.map { getRandomLabel() }
@@ -233,7 +232,6 @@ fun searchLocalVariables(node: AST, results: MutableSet<String>): Unit {
 
 val MAIN_NAME = "main"
 
-
 class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader(System.`in`)),
                    val writer: PrintWriter = PrintWriter(OutputStreamWriter(System.out))) {
 
@@ -241,6 +239,7 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
         val memory = HashMap<String, Val>()
 
         val stack = ArrayList<Val>()
+        stack.push(Val.Number(Int.MAX_VALUE)) // fake return address for main
         val functionStack = ArrayList<StackOp.Enter>()
 
         val labels = HashMap<String, Int>()
@@ -252,7 +251,7 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                 labels[op.label] = i
             }
         }
-        var ip = labels[MAIN_NAME] ?: throw IllegalStateException("No such label: _main")
+        var ip = labels[MAIN_NAME] ?: throw IllegalStateException("No such label: $MAIN_NAME")
 
         fun followIndexes(size: Int, name: String): Pair<Int, Val.Array> {
             val indexes = ArrayList<Int>()
@@ -351,7 +350,7 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                     varsToRestore += enter.argNames
                     varsToRestore += enter.localVariables
                     val returnValue = stack.pop()
-                    varsToRestore.reversed().forEach { 
+                    varsToRestore.reversed().forEach {
                         memory[it] = stack.pop()
                     }
                     val returnAddress = takeInt(stack.pop())
