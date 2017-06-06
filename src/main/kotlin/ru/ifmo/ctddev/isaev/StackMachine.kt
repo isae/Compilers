@@ -91,6 +91,7 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
         }
         is AST.Program -> {
             compile(node.functions, stack)
+            stack += StackOp.Comm("Function '$MAIN_NAME' definition ...")
             stack += StackOp.Label(MAIN_NAME)
             compile(node.statements, stack)
         }
@@ -232,24 +233,15 @@ fun searchLocalVariables(node: AST, results: MutableSet<String>): Unit {
 
 val MAIN_NAME = "main"
 
+
 class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader(System.`in`)),
                    val writer: PrintWriter = PrintWriter(OutputStreamWriter(System.out))) {
 
     private fun runStackMachine(operations: List<StackOp>) {
-        var funPrefix = MAIN_NAME
         val memory = HashMap<String, Val>()
 
         val stack = ArrayList<Val>()
-
-        fun pop(): Val {
-            val res = stack.last()
-            stack.removeAt(stack.size - 1)
-            return res
-        }
-
-        fun push(arg: Val) {
-            stack += arg
-        }
+        val functionStack = ArrayList<StackOp.Enter>()
 
         val labels = HashMap<String, Int>()
         operations.forEachIndexed { i, op ->
@@ -265,9 +257,9 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
         fun followIndexes(size: Int, name: String): Pair<Int, Val.Array> {
             val indexes = ArrayList<Int>()
             repeat(size, {
-                indexes += takeInt(pop())
+                indexes += takeInt(stack.pop())
             })
-            var array = memory["$funPrefix.$name"] as Val.Array
+            var array = memory[name] as Val.Array
             indexes.dropLast(1).forEach {
                 array = array.content[it] as Val.Array
             }
@@ -280,11 +272,11 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                 is StackOp.BuiltIn -> {
                     val args = ArrayList<Val>()
                     repeat(it.tag.argSize, {
-                        args += pop()
+                        args += stack.pop()
                     })
                     val res = performBuiltIn(it.tag, reader, writer, args)
                     if (res !is Val.Void) {
-                        push(res)
+                        stack.push(res)
                     }
                 }
                 is StackOp.Nop -> {
@@ -294,30 +286,30 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                 is StackOp.Comm -> {
                     //println(it.comment)
                 }
-                is StackOp.Push -> push(it.arg)
+                is StackOp.Push -> stack.push(it.arg)
                 is StackOp.Ld -> {
-                    val value = memory["$funPrefix.${it.arg}"] ?: throw IllegalStateException("No such variable $it.arg")
-                    push(value)
+                    val value = memory[it.arg] ?: throw IllegalStateException("No such variable $it.arg")
+                    stack.push(value)
                 }
                 is StackOp.St -> {
-                    memory["$funPrefix.${it.arg}"] = pop()
+                    memory[it.arg] = stack.pop()
                 }
                 is StackOp.StArr -> {
                     val (index, array) = followIndexes(it.indexes, it.arg)
-                    val value = pop()
+                    val value = stack.pop()
                     array.content[index] = value
                 }
                 is StackOp.LdArr -> {
                     val (index, array) = followIndexes(it.indexes, it.arg)
-                    push(array.content[index])
+                    stack.push(array.content[index])
                 }
                 is StackOp.Binop -> {
-                    val right = pop()
-                    val left = pop()
-                    push(Val.Number(apply(left, right, it.op)))
+                    val right = stack.pop()
+                    val left = stack.pop()
+                    stack.push(Val.Number(apply(left, right, it.op)))
                 }
                 is StackOp.Jif -> {
-                    val condition = takeInt(pop())
+                    val condition = takeInt(stack.pop())
                     if (condition == 0) {
                         ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
                     }
@@ -325,35 +317,45 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                 is StackOp.MakeArr -> {
                     val array = ArrayList<Val>()
                     repeat(it.size, {
-                        array += pop()
+                        array += stack.pop()
                     })
-                    push(Val.Array(array.asReversed()))
+                    stack.push(Val.Array(array.asReversed()))
                 }
                 is StackOp.Jump -> {
                     ip = labels[it.label] ?: throw IllegalStateException("No such label ${it.label}")
                 }
                 is StackOp.Call -> {
-                    push(Val.Number(ip)) //pushing return address, arguments are already on stack
+                    stack.push(Val.Number(ip)) //pushing return address, arguments are already on stack
                     val labelIp = labels["_${it.funName}"] ?: throw IllegalStateException("No such function '${it.funName}'")
                     ip = labelIp
-                    funPrefix = "$funPrefix/${it.funName}"
                 }
                 is StackOp.Enter -> {
-                    val returnAddress = pop()
+                    val returnAddress = stack.pop()
+                    val varsToPreserve = TreeSet<String>()
+                    varsToPreserve += it.argNames
+                    varsToPreserve += it.localVariables
+                    val localMem = HashMap<String, Val>()
                     it.argNames.forEach {
-                        memory["$funPrefix.$it"] = pop()
+                        localMem[it] = stack.pop()
                     }
-                    push(returnAddress)
+                    stack.push(returnAddress)
+                    varsToPreserve.forEach {
+                        stack.push(memory[it] ?: Val.Number(0))
+                    }
+                    memory += localMem
+                    functionStack.push(it)
                 }
                 is StackOp.Ret -> {
-                    memory.entries.removeIf { it.key.startsWith(funPrefix) }
-                    val lastSlash = funPrefix.lastIndexOf('/')
-                    if (lastSlash != -1) {
-                        funPrefix = funPrefix.substring(0, lastSlash)
+                    val enter = functionStack.pop()
+                    val varsToRestore = TreeSet<String>()
+                    varsToRestore += enter.argNames
+                    varsToRestore += enter.localVariables
+                    val returnValue = stack.pop()
+                    varsToRestore.reversed().forEach { 
+                        memory[it] = stack.pop()
                     }
-                    val returnValue = pop()
-                    val returnAddress = takeInt(pop())
-                    push(returnValue)
+                    val returnAddress = takeInt(stack.pop())
+                    stack.push(returnValue)
                     ip = returnAddress
                 }
             }
@@ -366,4 +368,14 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
         init()
         runStackMachine(operations)
     }
+}
+
+private fun <E> MutableList<E>.push(value: E) {
+    this += value
+}
+
+private fun <E> MutableList<E>.pop(): E {
+    val res = last()
+    removeAt(size - 1)
+    return res
 }
