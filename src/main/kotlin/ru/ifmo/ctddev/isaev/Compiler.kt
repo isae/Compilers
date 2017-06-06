@@ -20,11 +20,9 @@ read_int:
   ret
   
 write_int:
-  popl %edx
-  popl %eax
-  pushl %edx
   enter $16, $0
   andl $-16, %esp
+  movl 8(%ebp), %eax
   movl %eax, 4(%esp)
   lea format_out, %eax
   movl %eax, (%esp)
@@ -33,13 +31,26 @@ write_int:
   leave
   ret
 
+debug_int:
+  enter $16, $0
+  andl $-16, %esp
+  movl 8(%ebp), %eax
+  movl %eax, 4(%esp)
+  lea debug_out, %eax
+  movl %eax, (%esp)
+  call printf
+  movl $0, %eax
+  leave
+  ret
+
 .globl $MAIN_NAME
-    """
+"""
 
 val rodata = """
 .section .rodata
 format_in: .asciz "%d"
 format_out: .asciz "%d\n"
+debug_out: .asciz "Return value: %d\n"
 """
 
 val suffix = """
@@ -48,6 +59,8 @@ ret
 """
 
 val COMM_PREFIX = "//"
+val debugEnabled = true
+
 
 fun compile(nodes: List<StackOp>): List<String> {
     val ops = ArrayList<String>()
@@ -75,6 +88,7 @@ private fun compile(op: StackOp, ops: MutableList<String>, varOffsets: HashMap<S
                 }
                 op.tag == BuiltInTag.WRITE -> {
                     ops /= "call write_int"
+                    ops /= "popl %eax // Value is still on stack after write"
                 }
                 else -> TODO("Not implemented")
             }
@@ -223,6 +237,9 @@ private fun compile(op: StackOp, ops: MutableList<String>, varOffsets: HashMap<S
             ops /= "enter \$$frameSize, $0"
         }
         is StackOp.Ret -> {
+            if (debugEnabled) {
+                ops /= "call debug_int // Debug return value that is on stack"
+            }
             ops /= "popl %eax"
             ops /= "leave"
             ops /= "ret\n"
