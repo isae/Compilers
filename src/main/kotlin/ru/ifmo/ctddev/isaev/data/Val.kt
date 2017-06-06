@@ -4,12 +4,6 @@ package ru.ifmo.ctddev.isaev.data
  * @author iisaev
  */
 sealed class Val {
-    class Void : Val() {
-        override fun copy(): Val {
-            return this;
-        }
-    }
-
     class Number(val value: Int) : Val() {
         override fun copy(): Val {
             return Number(value)

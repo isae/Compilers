@@ -140,7 +140,7 @@ fun performBuiltIn(tag: BuiltInTag, reader: BufferedReader, writer: PrintWriter,
         BuiltInTag.READ -> builtInRead(reader)
         BuiltInTag.WRITE -> {
             args.forEach { builtInWrite(it, writer) }
-            return Val.Void()
+            return Val.Number(0)
         }
         BuiltInTag.STRLEN -> {
             val value = takeString(args[0])
@@ -156,7 +156,7 @@ fun performBuiltIn(tag: BuiltInTag, reader: BufferedReader, writer: PrintWriter,
             val index = takeInt(args[1])
             val char = takeChar(args[2])
             str[index] = char
-            return Val.Void()
+            return Val.Number(0)
         }
         BuiltInTag.STRSUB -> {
             val str = takeString(args[0])

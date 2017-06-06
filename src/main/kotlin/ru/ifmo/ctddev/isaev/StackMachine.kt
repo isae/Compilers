@@ -74,15 +74,15 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
                 is AST.FunctionCall.BuiltIn -> stack += StackOp.BuiltIn(node.tag)
                 is AST.FunctionCall.UserDefined -> {
                     stack += StackOp.Comm("Call ${node.name}")
-                    stack += StackOp.Call(node.name, node.args.size)
+                    stack += StackOp.Call(getLabelName(node.name), node.args.size)
                 }
             }
         }
         is AST.FunctionDef -> {
-            val funPrefix = if (node.functionName == MAIN_NAME) "" else "_function_"
+            val labelName = getLabelName(node.functionName)
 
             stack += StackOp.Comm("Function '${node.functionName}' definition ...")
-            stack += StackOp.Label("$funPrefix${node.functionName}")
+            stack += StackOp.Label(labelName)
             val localVariables = searchLocalVariables(node.body)
             localVariables.removeAll(node.argNames)
             stack += StackOp.Enter(node.argNames, localVariables)
@@ -172,6 +172,14 @@ private fun compile(node: AST, stack: MutableList<StackOp>) {
     }
 }
 
+private fun getLabelName(functionName: String): String {
+    if (functionName == MAIN_NAME) {
+        return functionName
+    } else {
+        return "_function_$functionName"
+    }
+}
+
 fun searchLocalVariables(body: List<AST>): MutableSet<String> {
     val results = HashSet<String>()
     body.forEach { searchLocalVariables(it, results) }
@@ -239,8 +247,8 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
         val memory = HashMap<String, Val>()
 
         val stack = ArrayList<Val>()
-        stack.push(Val.Number(Int.MAX_VALUE)) // fake return address for main
-        val functionStack = ArrayList<StackOp.Enter>()
+        stack.push(Val.Number(operations.size)) // fake return address for main
+        val functionStack = ArrayList<Pair<StackOp.Enter, Int>>()
 
         val labels = HashMap<String, Int>()
         operations.forEachIndexed { i, op ->
@@ -274,9 +282,7 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                         args += stack.pop()
                     })
                     val res = performBuiltIn(it.tag, reader, writer, args)
-                    if (res !is Val.Void) {
-                        stack.push(res)
-                    }
+                    stack.push(res)
                 }
                 is StackOp.Nop -> {
                 }
@@ -325,7 +331,7 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                 }
                 is StackOp.Call -> {
                     stack.push(Val.Number(ip)) //pushing return address, arguments are already on stack
-                    val labelIp = labels["_${it.funName}"] ?: throw IllegalStateException("No such function '${it.funName}'")
+                    val labelIp = labels[it.funName] ?: throw IllegalStateException("No such function '${it.funName}'")
                     ip = labelIp
                 }
                 is StackOp.Enter -> {
@@ -342,14 +348,20 @@ class StackMachine(val reader: BufferedReader = BufferedReader(InputStreamReader
                         stack.push(memory[it] ?: Val.Number(0))
                     }
                     memory += localMem
-                    functionStack.push(it)
+                    val base = stack.size
+                    functionStack.push(Pair(it, base))
                 }
                 is StackOp.Ret -> {
-                    val enter = functionStack.pop()
+                    val frame = functionStack.pop()
+                    val enter = frame.first
+                    val base = frame.second
                     val varsToRestore = TreeSet<String>()
                     varsToRestore += enter.argNames
                     varsToRestore += enter.localVariables
+
                     val returnValue = stack.pop()
+                    stack.subList(base, stack.size).clear() //drop of elements after base
+
                     varsToRestore.reversed().forEach {
                         memory[it] = stack.pop()
                     }

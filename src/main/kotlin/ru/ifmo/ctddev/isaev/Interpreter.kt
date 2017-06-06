@@ -43,12 +43,12 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
         }
 
         fun interpretStatements(statements: List<AST>): Val {
-            return statements.map { interpret(it, ctx, funCtx) }.lastOrNull() ?: Val.Void()
+            return statements.map { interpret(it, ctx, funCtx) }.lastOrNull() ?: Val.Number(0)
         }
 
         fun interpret(node: AST): Val {
             return when (node) {
-                is AST.Skip -> Val.Void()
+                is AST.Skip -> Val.Number(0)
                 is AST.Const -> node.value
                 is AST.Variable.Simple -> ctx[node.name] ?: throw IllegalStateException("No such variable: ${node.name}")
                 is AST.Variable.Index -> {
@@ -123,14 +123,14 @@ class Interpreter(val reader: BufferedReader = BufferedReader(InputStreamReader(
                     }
                 }
                 is AST.WhileLoop -> {
-                    var last = Val.Void() as Val
+                    var last = Val.Number(0) as Val
                     while (takeInt(interpret(node.expr)) > 0) {
                         last = interpretStatements(node.loop)
                     }
                     return last
                 }
                 is AST.ForLoop -> {
-                    var last = Val.Void() as Val
+                    var last = Val.Number(0) as Val
                     interpretStatements(node.init)
                     while (takeInt(interpret(node.expr)) != 0) {
                         last = interpretStatements(node.loop)
