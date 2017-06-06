@@ -48,21 +48,12 @@ ret
 """
 
 val COMM_PREFIX = "//"
-val FUNCTION_PREFIX = "_function_"
-
-private fun compile(node: StackOp): List<String> {
-    val ops = ArrayList<String>()
-    compile(node, ops)
-    return ops
-}
 
 fun compile(nodes: List<StackOp>): List<String> {
     val ops = ArrayList<String>()
     ops += rodata
-    val localVars = nodes.filter { it is StackOp.St }.map { (it as StackOp.St).arg }.distinct()
     ops += ".data"
     ops /= "int_read: .int 0"
-    localVars.forEach { ops /= "$it: .int 0" }
     ops += prefix
     compile(nodes, ops)
     ops += suffix
@@ -70,11 +61,11 @@ fun compile(nodes: List<StackOp>): List<String> {
 }
 
 private fun compile(nodes: List<StackOp>, ops: MutableList<String>) {
-    nodes.forEach { compile(it, ops) }
+    val varOffsets = HashMap<String, Int>()
+    nodes.forEach { compile(it, ops, varOffsets) }
 }
 
-
-private fun compile(op: StackOp, ops: MutableList<String>) {
+private fun compile(op: StackOp, ops: MutableList<String>, varOffsets: HashMap<String, Int>) {
     when (op) {
         is StackOp.BuiltIn -> {
             when {
@@ -93,6 +84,9 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
         }
         is StackOp.Label -> {
             ops += "${op.label}:"
+            if (op.label == MAIN_NAME) {
+                ops += "xorl %ecx, %ecx"
+            }
         }
         is StackOp.Comm -> {
             ops /= "$COMM_PREFIX${op.comment}"
@@ -102,11 +96,13 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             else -> TODO("Only Integer are implemented for now")
         }
         is StackOp.Ld -> {
-            ops /= "pushl (${op.arg})"
+            val offset = varOffsets[op.arg] ?: throw IllegalStateException("Variable not defined: ${op.arg}")
+            ops /= "pushl -$offset(%ebp) // Load ${op.arg}"
         }
         is StackOp.St -> {
             ops /= "popl %eax"
-            ops /= "movl %eax, (${op.arg})"
+            val offset = varOffsets[op.arg] ?: throw IllegalStateException("Variable not defined: ${op.arg}")
+            ops /= "movl %eax, -$offset(%ebp) // Store ${op.arg}"
         }
         is StackOp.Binop -> {
             when (op.op) {
@@ -212,17 +208,17 @@ private fun compile(op: StackOp, ops: MutableList<String>) {
             TODO("NOT SUPPORTED")
         }
         is StackOp.Enter -> {
-            val offsets = HashMap<String, Int>()
-            var offset = 0
+            varOffsets.clear()
+            var offset = 4
             op.argNames.forEach {
-                offsets[it] = offset
+                varOffsets[it] = offset
                 offset += 4
             }
             op.localVariables.forEach {
-                offsets[it] = offset
+                varOffsets[it] = offset
                 offset += 4
             }
-            ops /= "enter \$$offset, %ecx"
+            ops /= "enter \$$offset, $0"
         }
         is StackOp.Ret -> {
             ops /= "popl %eax"
